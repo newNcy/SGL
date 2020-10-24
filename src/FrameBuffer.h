@@ -1,23 +1,18 @@
 #pragma once
 
 #include <stdint.h>
+#include "maths.h"
 
-template <typename T>
-struct Pixel
-{
-	using Chanel = T;
-	Chanel r,g,b;
-};
 
 class FrameBuffer
 {
 	public:
-		using Pixel = Pixel<float>;
+		using Pixel = Vec3f;
 		FrameBuffer(int width, int height);
 		~FrameBuffer();
 
 		void assertXY(int x, int y) const;
-		void setPixel(int x, int y, Pixel::Chanel r, Pixel::Chanel g, Pixel::Chanel b);
+		void setPixel(int x, int y, float r, float g, float b);
 		void setPixel(int x, int y, const Pixel & pixel);
 		const Pixel & getPixel(int x, int y) const ;
 		const void * getBuffer() const { return pixels; }

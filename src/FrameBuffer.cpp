@@ -17,14 +17,20 @@ void FrameBuffer::assertXY(int x, int y) const
 	assert(y < height);
 }
 
-void FrameBuffer::setPixel(int x, int y, Pixel::Chanel r, Pixel::Chanel g, Pixel::Chanel b)
+void FrameBuffer::setPixel(int x, int y, float r, float g, float b)
 {
 	assertXY(x, y);
-
 	int idx = y*width + x;
 	pixels[idx].r = r;
 	pixels[idx].g = g;
 	pixels[idx].b = b;
+}
+		
+void FrameBuffer::setPixel(int x, int y, const Pixel & pixel)
+{
+	assertXY(x, y);
+	int idx = y*width + x;
+	pixels[idx] = pixel;
 }
 
 const FrameBuffer::Pixel & FrameBuffer::getPixel(int x, int y) const 
