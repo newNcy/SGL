@@ -11,11 +11,12 @@ class FrameBuffer
 		FrameBuffer(int width, int height);
 		~FrameBuffer();
 
-		void assertXY(int x, int y) const;
+		int xy2idx(int x, int y) const;
 		void setPixel(int x, int y, float r, float g, float b);
 		void setPixel(int x, int y, const Pixel & pixel);
 		const Pixel & getPixel(int x, int y) const ;
-		const void * getBuffer() const { return pixels; }
+		float getDepth(int x, int y) const;
+		void setDepth(int x, int y, float d);
 
 		int getWidth() const { return width; }
 		int getHeight() const { return height; }

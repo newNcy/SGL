@@ -96,6 +96,32 @@ const FrameBuffer & SGLPineline::getCurrentFrameBuffer() const
 	assert(currentFrame);
 	return *currentFrame;
 }
+		
+void SGLPineline::clearColor(float r, float g, float b)
+{
+	if (!currentFrame) {
+		return;
+	}
+
+	for (int y = 0; y < currentFrame->getHeight(); ++ y) {
+		for (int x = 0; x < currentFrame->getWidth(); ++ x) {
+			currentFrame->setPixel(x, y, r, g, b);
+		}
+	}
+}
+
+void SGLPineline::clearDepth(float d)
+{
+	if (!currentFrame) {
+		return;
+	}
+	for (int y = 0; y < currentFrame->getHeight(); ++ y) {
+		for (int x = 0; x < currentFrame->getWidth(); ++ x) {
+			currentFrame->setDepth(x, y, d);
+		}
+	}
+}
+
 
 void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b)
 {
@@ -174,7 +200,7 @@ float calcS(const Vec2i & a, const Vec2i & b,const Vec2i & c)
 	return res*0.5f;
 }
 
-void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & b, const ScreenPoint & c)
+void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & b, const ScreenPoint & c, bool testz)
 {
 	if (!currentFrame) {
 		return;
@@ -186,18 +212,77 @@ void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & 
 
 	auto bb = bbox(*currentFrame, A, B, C);
 	float S = calcS(A, B, C);
+	if (!S) {
+		return;
+	}
 
-	for (int x = bb.min.x+1; x < bb.max.x; ++ x) {
-		for (int y = bb.min.y+1; y < bb.max.y; ++ y) {
+	for (int x = bb.min.x; x <= bb.max.x; ++ x) {
+		for (int y = bb.min.y; y <= bb.max.y; ++ y) {
 			Vec2i p(x, y);
 			float s1 = calcS(B,p,C);
 			float s2 = calcS(A,p,C);
 			float s3 = calcS(A,p,B);
+			
+			float w1= s1/S;
+			float w2 = s2/S;
+			float w3 = s3/S;
 
-			auto color = a.color*s1/S + b.color*s2/S + c.color*s3/S;
+			float depth = a.depth*w1+ b.depth*w2 + c.depth*w3;
+			auto color = a.color*w1+ b.color*w2+ c.color*w3;
 			if (s1+s2+s3 <= S) {
-				currentFrame->setPixel(x, y, color);
+				float depthBuf = currentFrame->getDepth(x, y);
+				if (!testz || depthBuf > depth) {
+					currentFrame->setPixel(x, y, color);
+					currentFrame->setDepth(x, y, depth);
+				}
 			}		
+		}
+	}
+}
+	
+
+bool SGLPineline::needClip(const Vec4f & pos)
+{
+	return pos.x < -1 || pos.x > 1 || pos.y < -1 || pos.y > 1 || pos.z < -1 || pos.z > 1;
+}
+
+Vec2i SGLPineline::viewPortTrans(const Vec4f & pos)
+{
+	float x = (pos.x + 1)*0.5;
+	float y = (-pos.y + 1)*0.5;
+
+	return Vec2i(x*currentFrame->getWidth(), y*currentFrame->getHeight());
+}
+		
+void SGLPineline::drawArrayLine(const Vertex * verties, size_t count, DrawMode drawMode)
+{
+}
+
+void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawMode)
+{
+}
+
+void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+{
+	if (!verties || !indices || !currentFrame || !shader) return;
+
+	for (int i = 0; i < indiesCount/3; ++ i) {
+		std::vector<ScreenPoint> screenPoints;
+		for (int j = 0; j < 3; ++ j) {
+			auto & vert = verties[indices[i*3 + j]];
+			auto clipPoint = shader->onVertex(vert.position);
+			if (needClip(clipPoint)) {
+				continue;
+			}
+			auto color = shader->onFragment(vert);
+			ScreenPoint p;
+			p.position = viewPortTrans(clipPoint);
+			p.color = Vec3f(color.r, color.g, color.b);
+			p.depth  = -clipPoint.z;
+			screenPoints.push_back(p);
+		}
+		if (screenPoints.size() == 3) {
+			drawScreenTriangle(screenPoints[0], screenPoints[1], screenPoints[2], true);
 		}
 	}
 }

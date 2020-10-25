@@ -7,36 +7,44 @@ FrameBuffer::FrameBuffer(int width, int height):width(width), height(height)
 	pixels = new Pixel[pixelCount];
 	depth = new float[pixelCount];
 }
-		
 
-void FrameBuffer::assertXY(int x, int y) const 
+int FrameBuffer::xy2idx(int x, int y) const 
 {
 	assert(x >= 0);
 	assert(y >= 0);
 	assert(x < width);
 	assert(y < height);
+	return y*width + x;
 }
 
 void FrameBuffer::setPixel(int x, int y, float r, float g, float b)
 {
-	assertXY(x, y);
-	int idx = y*width + x;
+	int idx = xy2idx(x, y);
 	pixels[idx].r = r;
 	pixels[idx].g = g;
 	pixels[idx].b = b;
 }
-		
+
 void FrameBuffer::setPixel(int x, int y, const Pixel & pixel)
 {
-	assertXY(x, y);
-	int idx = y*width + x;
+	int idx = xy2idx(x, y);
 	pixels[idx] = pixel;
+}
+
+void FrameBuffer::setDepth(int x, int y, float d)
+{
+	depth[xy2idx(x,y)] = d;
+}
+
+float FrameBuffer::getDepth(int x, int y) const
+{
+	int idx = xy2idx(x, y);
+	return depth[idx];
 }
 
 const FrameBuffer::Pixel & FrameBuffer::getPixel(int x, int y) const 
 {
-	assertXY(x, y);
-	int idx = y*width + x;
+	int idx = xy2idx(x, y);
 	return pixels[idx];
 }
 		
