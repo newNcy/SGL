@@ -96,12 +96,12 @@ SGLPineline pipeline;
 					{0, 0, 0, 1}, 
 				};
 
-				Vec3f pos(0, 2, -10);
+				Vec3f pos(0, -2, -10);
 				Vec3f target(0, 0, 0);
 				Vec3f up(0, 1, 0);
 				view = lookat(pos, target, up);
 				print(view);
-				projection = perspective(80, 1.f, .1f, 1000);
+				projection = perspective(60, 1.f, .1f, 1000);
 			}
 
 			Vec4f onVertex(const Vec3f & pos) override
