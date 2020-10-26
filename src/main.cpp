@@ -8,11 +8,6 @@
 #include "debug.h"
 
 
-void printvec2(const Vec2i & v)
-{
-	printf("{%d,%d}\n", v.x, v.y);
-}
-
 int main(int argc, char * argv[])
 {
 	initSGL();
@@ -87,6 +82,7 @@ SGLPineline pipeline;
 
 	class NormalShader : public SGLShader
 	{
+		const float pi = 3.1415926;
 		private:
 			Mat4f model, view, projection;
 		public:
@@ -94,17 +90,18 @@ SGLPineline pipeline;
 			{
 				model = 
 				{
-					{0.3f, 0, 0, 0},
-					{0, 0.3f, 0, 0},
-					{0, 0, 0.3f, 0}, 
+					{1, 0, 0, 0},
+					{0, 1.f, 0, 0},
+					{0, 0, 1, 0}, 
 					{0, 0, 0, 1}, 
 				};
 
-				Vec3f pos(1, 1, 1);
+				Vec3f pos(0, 2, -10);
 				Vec3f target(0, 0, 0);
 				Vec3f up(0, 1, 0);
 				view = lookat(pos, target, up);
-				projection = perspective(60, 1.f, .1f, 1000);
+				print(view);
+				projection = perspective(80, 1.f, .1f, 1000);
 			}
 
 			Vec4f onVertex(const Vec3f & pos) override

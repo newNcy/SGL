@@ -127,7 +127,6 @@ Vec4<T> operator * (const Vec4<T> & vec, const Mat4<T> & mat)
 		ret[i] = 0;
 		for (int j = 0 ; j < 4; ++ j) {
 			ret[i] += vec[j]*mat[j][i];
-			printf("v[%d] += %f\n", i, vec[j]*mat[j][i]);
 		}
 	}
 	return ret;

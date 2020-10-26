@@ -244,7 +244,12 @@ void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & 
 
 bool SGLPineline::needClip(const Vec4f & pos)
 {
-	return pos.x < -1 || pos.x > 1 || pos.y < -1 || pos.y > 1 || pos.z < -1 || pos.z > 1;
+	for (int i = 0; i < 3; ++ i) {
+		if (pos[i] < -pos.w || pos[i] > pos.w) {
+			return true;
+		}
+	}
+	return false;
 }
 
 Vec2i SGLPineline::viewPortTrans(const Vec4f & pos)
@@ -272,7 +277,7 @@ void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned in
 		for (int j = 0; j < 3; ++ j) {
 			auto & vert = verties[indices[i*3 + j]];
 			auto clipPoint = shader->onVertex(vert.position);
-			//clipPoint = clipPoint/clipPoint.w;
+			clipPoint = clipPoint/clipPoint.w;
 			print(clipPoint, 4);
 			if (needClip(clipPoint)) {
 				continue;
