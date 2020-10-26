@@ -27,8 +27,18 @@ Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 	return view;
 }
 
-Mat4f perspective(float fov, float n, float f)
+Mat4f perspective(float fov,float aspect, float n, float f)
 {
-	Mat4f projection;
+	fov = int(fov)%180/180.f*3.1415926/2;
+	float h = n*tan(fov);
+	float w = h*aspect;
+	printf("%f %f\n", w, h);
+	Mat4f projection = 
+	{
+		{2*n/w, 0,			0,				0},
+		{0,		2*n/h,		0,				0},
+		{0,		0,			(f+n)/(f-n),	1},
+		{0,		0,			-2*f*n/(f-n),	0},
+	};
 	return projection;
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cmath>
+#include <stdio.h>
 
 template <typename T>
 struct Vec2
@@ -126,6 +127,7 @@ Vec4<T> operator * (const Vec4<T> & vec, const Mat4<T> & mat)
 		ret[i] = 0;
 		for (int j = 0 ; j < 4; ++ j) {
 			ret[i] += vec[j]*mat[j][i];
+			printf("v[%d] += %f\n", i, vec[j]*mat[j][i]);
 		}
 	}
 	return ret;
@@ -139,4 +141,4 @@ using Vec4f = Vec4<float>;
 using Mat4f = Mat4<float>;
 
 Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up);
-Mat4f perspective(float fov, float n, float f);
+Mat4f perspective(float fov, float aspect, float n, float f);

@@ -1,5 +1,6 @@
 #include "maths.h"
 #include <cstdio>
+#include "debug.h"
 
 
 int main ()
@@ -29,4 +30,15 @@ int main ()
 	auto target2 = pos * combine;
 	print(target, 4);
 	print(target2, 4);
+
+	//透视矩阵
+	auto proj = perspective(90, 1, 1, 2);
+	print(proj);
+
+	Vec4f pos2 = {1,0.5,1, 1};
+	print(pos2, 4);
+	printf("%f\n", tan(3.1415926/4));
+	auto prop = pos2 * proj;
+	print(prop, 4);
+	print(prop/prop.w, 4);
 }

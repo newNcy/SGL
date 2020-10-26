@@ -100,15 +100,16 @@ SGLPineline pipeline;
 					{0, 0, 0, 1}, 
 				};
 
-				Vec3f pos(0.3, 0.3, 0.3);
+				Vec3f pos(1, 1, 1);
 				Vec3f target(0, 0, 0);
 				Vec3f up(0, 1, 0);
 				view = lookat(pos, target, up);
+				projection = perspective(60, 1.f, .1f, 1000);
 			}
 
 			Vec4f onVertex(const Vec3f & pos) override
 			{
-				Vec4f ret = Vec4f(pos,1) * model * view;
+				Vec4f ret = Vec4f(pos,1) * model * view * projection;
 				//print(ret, 4);
 				//fflush(stdout);
 				return ret;
@@ -116,11 +117,11 @@ SGLPineline pipeline;
 	};
 	auto shader = std::make_shared<NormalShader>();
 	pipeline.useShader(shader);
+	pipeline.clearDepth(1.f);
+	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
 
 	bool quit = false;
 	while (!quit) {
-		pipeline.clearDepth(2.f);
-		pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			//handle events

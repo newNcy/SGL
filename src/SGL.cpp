@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <cmath>
+#include "debug.h"
 
 bool initSGL()
 {
@@ -271,6 +272,8 @@ void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned in
 		for (int j = 0; j < 3; ++ j) {
 			auto & vert = verties[indices[i*3 + j]];
 			auto clipPoint = shader->onVertex(vert.position);
+			//clipPoint = clipPoint/clipPoint.w;
+			print(clipPoint, 4);
 			if (needClip(clipPoint)) {
 				continue;
 			}
@@ -278,7 +281,7 @@ void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned in
 			ScreenPoint p;
 			p.position = viewPortTrans(clipPoint);
 			p.color = Vec3f(color.r, color.g, color.b);
-			p.depth  = -clipPoint.z;
+			p.depth  = clipPoint.z;
 			screenPoints.push_back(p);
 		}
 		if (screenPoints.size() == 3) {
