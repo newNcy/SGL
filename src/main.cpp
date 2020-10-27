@@ -71,7 +71,7 @@ SGLPineline pipeline;
 		4, 7, 3,
 
 		1, 5, 6,
-		1, 2, 5,
+		1, 2, 6,
 
 		4, 5, 1,
 		4, 0, 1,
@@ -86,22 +86,19 @@ SGLPineline pipeline;
 		private:
 			Mat4f model, view, projection;
 		public:
+			void setModel(const Mat4f & m) 
+			{
+				model = m;
+			}
+
 			NormalShader()
 			{
-				model = 
-				{
-					{1, 0, 0, 0},
-					{0, 1.f, 0, 0},
-					{0, 0, 1, 0}, 
-					{0, 0, 0, 1}, 
-				};
-
-				Vec3f pos(0, -2, -10);
+				Vec3f pos(0, 0, -20);
 				Vec3f target(0, 0, 0);
 				Vec3f up(0, 1, 0);
 				view = lookat(pos, target, up);
 				print(view);
-				projection = perspective(60, 1.f, .1f, 1000);
+				projection = perspective(90, 1.f, .1f, 1000);
 			}
 
 			Vec4f onVertex(const Vec3f & pos) override
@@ -112,9 +109,32 @@ SGLPineline pipeline;
 				return ret;
 			}
 	};
+
 	auto shader = std::make_shared<NormalShader>();
+	
+
+
 	pipeline.useShader(shader);
 	pipeline.clearDepth(1.f);
+
+	
+	//第一个
+	auto model = rotation(15,15,0) * moveto(-5, 0, 0) ;
+	shader->setModel(model);
+	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
+	
+	//第二个
+	model = rotation(-15,-15,0) * moveto(3, 0, 0) ;
+	shader->setModel(model);
+	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
+	
+	//第三个
+	model = rotation(-15,-15,0) * moveto(0, 3, 0) ;
+	shader->setModel(model);
+	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
+
+	model = rotation(-15,-15,0) * moveto(0, -3, 0) ;
+	shader->setModel(model);
 	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
 
 	bool quit = false;

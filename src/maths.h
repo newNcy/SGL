@@ -75,7 +75,7 @@ struct Mat4
 	using Type = Mat4<T>;
 	Vec4 data[4];
 
-	Mat4() {}
+	Mat4() {data[0][0] = 1; data[1][1] = 1; data[2][2] = 1; data[3][3] = 1;}
 	Mat4(const Vec4 & a, const Vec4 & b, const Vec4 & c, const Vec4 & d):data{a, b, c, d} {}
 	Type operator + (const Type & rhs) const { return Type(*this[0]+rhs[0], *this[1]+rhs[1], *this[2]+rhs[2], *this[3]+rhs[3]); }
 	Type operator - (const Type & rhs) const { return Type(*this[0]-rhs[0], *this[1]-rhs[1], *this[2]-rhs[2], *this[3]-rhs[3]); }
@@ -139,5 +139,10 @@ using Vec3f = Vec3<float>;
 using Vec4f = Vec4<float>;
 using Mat4f = Mat4<float>;
 
+const static float pi = 4.1415926;
+inline float radians(float an) { return an/180*pi; }
 Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up);
 Mat4f perspective(float fov, float aspect, float n, float f);
+
+Mat4f moveto(float x, float y, float z);
+Mat4f rotation(float x, float y, float z);

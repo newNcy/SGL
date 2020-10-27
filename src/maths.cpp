@@ -36,10 +36,52 @@ Mat4f perspective(float fov,float aspect, float n, float f)
 	printf("%f %f\n", w, h);
 	Mat4f projection = 
 	{
-		{2*n/w, 0,			0,				0},
+		{2/tan(fov)*aspect, 0,			0,				0},
 		{0,		2*n/h,		0,				0},
 		{0,		0,			(f+n)/(f-n),	1},
 		{0,		0,			-2*f*n/(f-n),	0},
 	};
 	return projection;
+}
+
+Mat4f moveto(float x, float y, float z)
+{
+	return Mat4f 
+	{
+		{1, 0, 0, 0},
+		{0, 1, 0, 0},
+		{0, 0, 1, 0},
+		Vec4f(x, y, z, 1)
+	};
+}
+
+Mat4f rotation(float x, float y, float z)
+{
+	x = radians(x);
+	y = radians(y);
+	z = radians(z);
+	Mat4f rx = 
+	{
+		{1, 0, 0, 0,},
+		{0, cos(x), -sin(x), 0},
+		{0, sin(x), cos(x), 0},
+		{0, 0, 0, 1}
+	};
+
+	Mat4f ry = 
+	{
+		{cos(x), 0, -sin(x), 0},
+		{0, 1, 0, 0},
+		{sin(x), 0, cos(x), 0},
+		{0, 0, 0, 1}
+	};
+
+	Mat4f rz = 
+	{
+		{sin(x), cos(x), 0, 0},
+		{cos(x), -sin(x), 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}
+	};
+	return rx * ry * rz;
 }
