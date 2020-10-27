@@ -6,6 +6,7 @@
 #include "SGL.h"
 #include "maths.h"
 #include "debug.h"
+#include <glm/glm.hpp>
 
 
 int main(int argc, char * argv[])
@@ -91,60 +92,103 @@ SGLPineline pipeline;
 				model = m;
 			}
 
+			void setCamera(const Mat4f & c)
+			{
+				view = c;
+			}
+
 			NormalShader()
 			{
-				Vec3f pos(0, 0, -20);
-				Vec3f target(0, 0, 0);
-				Vec3f up(0, 1, 0);
-				view = lookat(pos, target, up);
-				print(view);
+				//print(view);
 				projection = perspective(90, 1.f, .1f, 1000);
 			}
 
 			Vec4f onVertex(const Vec3f & pos) override
 			{
 				Vec4f ret = Vec4f(pos,1) * model * view * projection;
-				//print(ret, 4);
-				//fflush(stdout);
 				return ret;
 			}
 	};
 
 	auto shader = std::make_shared<NormalShader>();
-	
-
-
 	pipeline.useShader(shader);
-	pipeline.clearDepth(1.f);
-
 	
 	//第一个
-	auto model = rotation(15,15,0) * moveto(-5, 0, 0) ;
-	shader->setModel(model);
-	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
-	
-	//第二个
-	model = rotation(-15,-15,0) * moveto(3, 0, 0) ;
-	shader->setModel(model);
-	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
-	
-	//第三个
-	model = rotation(-15,-15,0) * moveto(0, 3, 0) ;
-	shader->setModel(model);
-	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
+	Vec3f campos(0, 0, -20);
+	Vec3f up(0, 1, 0);
+	Vec3f focus(0, 0, 0);
+	auto view = lookat(campos, focus, up);
 
-	model = rotation(-15,-15,0) * moveto(0, -3, 0) ;
-	shader->setModel(model);
-	pipeline.drawElements(cube, 8, indies, 36, DrawMode::SGL_LINE);
+	shader->setCamera(view);
 
 	bool quit = false;
+	auto mode = DrawMode::SGL_TRIANGLE;
+
+	float xr = 0, yr = 0, zr = 0;
+
+	if (SDL_CaptureMouse((SDL_bool)true)) {
+		return 0;
+	}
 	while (!quit) {
+		pipeline.clearColor(.5f, .5f, .5f);
+		pipeline.clearDepth(1.f);
+
+		/*
+		auto model = rotate(15,15,0) * moveto(-5, 0, 0) ;
+		shader->setModel(model);
+		pipeline.drawElements(cube, 8, indies, 36, mode);
+		//第二个
+		model = rotate(-15,-15,0) * moveto(3, 0, 0) ;
+		shader->setModel(model);
+		pipeline.drawElements(cube, 8, indies, 36, mode);
+
+		//第三个
+		model = rotate(-15,-15,0) * moveto(0, 3, 0) ;
+		shader->setModel(model);
+		pipeline.drawElements(cube, 8, indies, 36, mode);
+
+		model = rotate(-15,-15,0) * moveto(0, -3, 0) ;
+		shader->setModel(model);
+		pipeline.drawElements(cube, 8, indies, 36, mode);
+
+		*/
+		//原点
+		auto model = scale(5, 5, 5) ;
+		shader->setModel(model);
+		pipeline.drawElements(cube, 8, indies, 36, mode);
+
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			//handle events
 			if (event.type == SDL_QUIT) {
 				quit = true;
+			}else if (event.type == SDL_MOUSEMOTION) {
+				int px = event.motion.x;
+				int py = event.motion.y;
+			}else if (event.type == SDL_KEYDOWN) {
+				char key = event.key.keysym.sym;
+				float moveSpeed = 0.8;
+				switch (key) {
+					case 'a':
+						campos.x -= moveSpeed;
+						break;
+					case 's':
+						campos.y -= moveSpeed;
+						break;
+					case 'w':
+						campos.y += moveSpeed;
+						break;
+					case 'd':
+						campos.x += moveSpeed;
+						break;
+				}
+				view = lookat(campos, focus, up);
+				shader->setCamera(view);
+				//printf("camera:");
+				//print(campos,3);
+				
 			}
+
 
 			//do things			
 			//rendering

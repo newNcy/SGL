@@ -1,6 +1,11 @@
 #include "maths.h"
 #include <cstdio>
 #include "debug.h"
+#include <glm/glm.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 
 int main ()
@@ -40,8 +45,16 @@ int main ()
 
 	printf("camera test\n");
 	Vec3f cpos(0, 0, -1);
-	Vec3f target(0, 0, 0);
+	Vec3f target(0, 1, 0);
 	Vec3f up(0, 1, 0);
 	auto  view = lookat(cpos, target, up);
 	print(view);
+
+	auto glview = glm::lookAt(glm::vec3(0, 0, -1), glm::vec3(0,1,0), glm::vec3(0,1,0));
+	for (int i = 0 ; i < 4; ++ i) {
+		for (int j = 0 ; j < 4; ++ j) {
+			printf("%f ", glview[i][j]);
+		}
+		printf("\n");
+	}
 }

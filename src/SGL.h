@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <vector>
 #include "FrameBuffer.h"
 #include "maths.h"
 #include <memory>
@@ -77,7 +78,7 @@ class SGLPineline
 		void useShader(std::shared_ptr<SGLShader> shader) { this->shader = shader; }
 		const FrameBuffer & getCurrentFrameBuffer() const;
 
-		void drawScreenLine(const ScreenPoint & a, const ScreenPoint & b);
+		void drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, bool testz = false);
 		void drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & b, const ScreenPoint & c, bool testz = false);
 
 		void drawArrayLine(const Vertex * verties, size_t count, DrawMode drawMode);
@@ -85,13 +86,15 @@ class SGLPineline
 		void clearColor(float r, float g, float b);
 		void clearDepth(float d);
 
-		int xy2idx(int x, int y) const;
 		void drawArray(const Vertex * verties, size_t count, DrawMode drawMode);
 		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 
 	private:
-		bool needClip(const Vec4f & pos);
+		void draw(const std::vector<Vertex> & verts, DrawMode mode);
+		int xy2idx(int x, int y) const;
+		bool needClip(const Vec3f & pos);
 		Vec2i viewPortTrans(const Vec4f & pos);
+
 		FrameBuffer * currentFrame = nullptr;
 		std::shared_ptr<SGLShader> shader;
 };

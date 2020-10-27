@@ -8,5 +8,5 @@ void print(const Mat4f & m, char end)
 		print(m[i], 4);
 	}
 	printf("}%c", end);
-
+	fflush(stdout);
 }

@@ -2,7 +2,6 @@
 #include "SGL.h"
 #include <cstdio>
 #include <algorithm>
-#include <vector>
 #include <cmath>
 #include "debug.h"
 
@@ -124,7 +123,7 @@ void SGLPineline::clearDepth(float d)
 }
 
 
-void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b)
+void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, bool testz)
 {
 	if (!currentFrame) {
 		return;
@@ -134,6 +133,8 @@ void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b)
 	auto e = b.position;
 	auto ca = a.color;
 	auto cb = b.color;
+	auto da = a.depth;
+	auto db = b.depth;
 
 	int dy = e.y - s.y;
 	int dx = e.x - s.x;
@@ -148,6 +149,7 @@ void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b)
 		std::swap(s.x, e.x);
 		std::swap(s.y, e.y);
 		std::swap(ca, cb);
+		std::swap(da, db);
 	}
 
 	float k = abs(float(dy) / dx);
@@ -157,10 +159,14 @@ void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b)
 	while (s.x != e.x) {
 		auto left = float(e.x - s.x)/dx;
 		Vec3f color = ca*(1-left) + cb*left;
+		float depth = da*(1-left) + db*left;
+		int x = s.x, y = s.y;
 		if (steep) {
-			currentFrame->setPixel(s.y, s.x, color);
-		}else {
-			currentFrame->setPixel(s.x, s.y, color);
+			std::swap(x, y);
+		}
+		if (!testz || currentFrame->getDepth(x, y) > depth) {
+			currentFrame->setPixel(x, y, color);
+			currentFrame->setDepth(x, y, depth);
 		}
 		err += k;
 		s.x ++;
@@ -242,10 +248,10 @@ void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & 
 }
 	
 
-bool SGLPineline::needClip(const Vec4f & pos)
+bool SGLPineline::needClip(const Vec3f & pos)
 {
 	for (int i = 0; i < 3; ++ i) {
-		if (pos[i] < -pos.w || pos[i] > pos.w) {
+		if (pos[i] < -1 || pos[i] > 1) {
 			return true;
 		}
 	}
@@ -268,29 +274,62 @@ void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
 {
 }
 
-void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 {
-	if (!verties || !indices || !currentFrame || !shader) return;
-
-	for (int i = 0; i < indiesCount/3; ++ i) {
+	//图元装配
+	for (int i = 0; i < verts.size()/3; ++ i) {
 		std::vector<ScreenPoint> screenPoints;
 		for (int j = 0; j < 3; ++ j) {
-			auto & vert = verties[indices[i*3 + j]];
-			auto clipPoint = shader->onVertex(vert.position);
-			clipPoint = clipPoint/clipPoint.w;
-			print(clipPoint, 4);
-			if (needClip(clipPoint)) {
+			auto & vert = verts[i*3 + j];
+			if (needClip(vert.position)) {
 				continue;
 			}
 			auto color = shader->onFragment(vert);
 			ScreenPoint p;
-			p.position = viewPortTrans(clipPoint);
+			p.position = viewPortTrans(vert.position);
 			p.color = Vec3f(color.r, color.g, color.b);
-			p.depth  = clipPoint.z;
+			p.depth  = vert.position.z;
 			screenPoints.push_back(p);
 		}
 		if (screenPoints.size() == 3) {
-			drawScreenTriangle(screenPoints[0], screenPoints[1], screenPoints[2], true);
+			if (mode == DrawMode::SGL_TRIANGLE) {
+				drawScreenTriangle(screenPoints[0], screenPoints[1], screenPoints[2], true);
+			} else if (mode == DrawMode::SGL_LINE) {
+				drawScreenLine(screenPoints[0], screenPoints[1]);
+				drawScreenLine(screenPoints[1], screenPoints[2]);
+				drawScreenLine(screenPoints[2], screenPoints[0]);
+			}
+
 		}
 	}
+}
+
+void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+{
+	if (!verties || !indices || !currentFrame || !shader) return;
+
+	int vertCount = indiesCount;
+	if (drawMode == DrawMode::SGL_LINE) {
+		if (vertCount < 2) {
+			return;
+		}
+	}else if (drawMode == DrawMode::SGL_TRIANGLE) {
+		if (vertCount < 3) {
+			return;
+		}
+		vertCount = vertCount/3*3;
+	}
+
+	std::vector<Vertex> clipPoints;
+
+	//顶点计算
+	for (int i = 0; i < vertCount; ++ i) {
+		Vertex v = verties[indices[i]];
+		Vec4f clip = shader->onVertex(v.position);
+		clip = clip/clip.w;
+		v.position = Vec3f(clip.x, clip.y, clip.z);
+		clipPoints.push_back(v);
+	}
+
+	draw(clipPoints, drawMode);
 }

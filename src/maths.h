@@ -101,7 +101,9 @@ Vec3<T> cross(const Vec3<T> & lhs, const Vec3<T> & rhs)
 template <typename T>
 Vec3<T> normalize(const Vec3<T> & v3)
 {
-	return v3/sqrt(v3.x*v3.x + v3.y*v3.y + v3.z*v3.z);
+	float length = v3.x*v3.x + v3.y*v3.y + v3.z*v3.z;
+	//print(v3, 3);
+	return v3/sqrt(length);
 }
 
 template <typename T>
@@ -145,4 +147,5 @@ Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up);
 Mat4f perspective(float fov, float aspect, float n, float f);
 
 Mat4f moveto(float x, float y, float z);
-Mat4f rotation(float x, float y, float z);
+Mat4f rotate(float x, float y, float z);
+Mat4f scale(float x, float y, float z);
