@@ -6,7 +6,7 @@
 #include "SGL.h"
 #include "maths.h"
 #include "debug.h"
-#include <glm/glm.hpp>
+//#include <glm/glm.hpp>
 
 
 int main(int argc, char * argv[])
@@ -49,14 +49,14 @@ SGLPineline pipeline;
 
 	Vertex cube[] = 
 	{
-		{{-1.f, 1.f, -1.f}, {.color = {1.f,0.f,0.f}}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f, -1.f}, {.color = {1.f,0.f,1.f}}, {0.f,0.f,0.f}},
 		{{ 1.f, 1.f, -1.f}, {.color = {1.f,1.f,0.f}}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {.color = {1.f,0.f,1.f}}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f, -1.f}, {.color = {1.f,0.f,0.f}}, {0.f,0.f,0.f}},
 		{{-1.f,-1.f, -1.f}, {.color = {1.f,0.f,0.f}}, {0.f,0.f,0.f}},
 
-		{{-1.f, 1.f,  1.f}, {.color = {0.f,1.f,0.f}}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f,  1.f}, {.color = {1.f,1.f,1.f}}, {0.f,0.f,0.f}},
 		{{ 1.f, 1.f,  1.f}, {.color = {0.f,1.f,0.f}}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {.color = {0.f,1.f,0.f}}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {.color = {0.f,1.f,1.f}}, {0.f,0.f,0.f}},
 		{{-1.f,-1.f,  1.f}, {.color = {0.f,1.f,0.f}}, {0.f,0.f,0.f}}
 	};
 
@@ -114,7 +114,7 @@ SGLPineline pipeline;
 	pipeline.useShader(shader);
 	
 	//第一个
-	Vec3f campos(0, 0, -20);
+	Vec3f campos(-20, 20, -20);
 	Vec3f up(0, 1, 0);
 	Vec3f focus(0, 0, 0);
 	auto view = lookat(campos, focus, up);
@@ -130,7 +130,7 @@ SGLPineline pipeline;
 		return 0;
 	}
 	while (!quit) {
-		pipeline.clearColor(.5f, .5f, .5f);
+		pipeline.clearColor(.1f, .1f, .1f);
 		pipeline.clearDepth(1.f);
 
 		/*
@@ -153,7 +153,7 @@ SGLPineline pipeline;
 
 		*/
 		//原点
-		auto model = scale(5, 5, 5) ;
+		auto model = scale(5, 5, 5);
 		shader->setModel(model);
 		pipeline.drawElements(cube, 8, indies, 36, mode);
 
@@ -188,7 +188,6 @@ SGLPineline pipeline;
 				//print(campos,3);
 				
 			}
-
 
 			//do things			
 			//rendering

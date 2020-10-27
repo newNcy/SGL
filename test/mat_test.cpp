@@ -7,7 +7,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 int main ()
 {
 	Mat4f movex = 
@@ -27,34 +26,39 @@ int main ()
 	};
 
 	Mat4f combine = movex * movey;
+	printf("translate combine");
 	print(combine);
 	Vec4f pos = {2, 3, 4, 1};
 	print(pos, 4);
 	//令人巴适的行向量
 
 	//透视矩阵
-	auto proj = perspective(90, 1, 1, 2);
+	printf("project");
+	auto proj = perspective(90, 1, 0.1f, 1000.f);
 	print(proj);
 
-	Vec4f pos2 = {1,0.5,1, 1};
+	Vec4f pos2 = {2.5,2.5,2.5, 1};
 	print(pos2, 4);
-	printf("%f\n", tan(3.1415926/4));
 	auto prop = pos2 * proj;
 	print(prop, 4);
 	print(prop/prop.w, 4);
-
-	printf("camera test\n");
-	Vec3f cpos(0, 0, -1);
-	Vec3f target(0, 1, 0);
-	Vec3f up(0, 1, 0);
-	auto  view = lookat(cpos, target, up);
-	print(view);
-
-	auto glview = glm::lookAt(glm::vec3(0, 0, -1), glm::vec3(0,1,0), glm::vec3(0,1,0));
-	for (int i = 0 ; i < 4; ++ i) {
-		for (int j = 0 ; j < 4; ++ j) {
-			printf("%f ", glview[i][j]);
-		}
-		printf("\n");
+	printf("glm\n");
+	auto pro2 = glm::perspective(glm::radians(90.f), 1.f, 0.1f, 1000.f);
+	glm::vec4 needPro1(2.5, 2.5, -2.5, 1);
+	auto prop2 = pro2 * needPro1;
+	for ( int i = 0 ; i < 4; ++ i) {
+		printf("%f ", prop2[i]);
 	}
+	printf("\n");
+
+	Vec3f at(0, 0, -1);
+	Vec3f up(0, 1, 1);
+	Vec3f to(0, 0, 0);
+
+	auto front = normalize(to-at);
+	auto right = normalize(cross(up, front));
+	auto cup = normalize(cross(front, right));
+	print(right, 3);
+	print(cup, 3);
+	print(front, 3);
 }
