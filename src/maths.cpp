@@ -15,7 +15,6 @@ Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 		Vec4f(front, 0),
 		Vec4f(0, 0, 0, 1)
 	};
-
 	for (int i = 0 ; i < 4; ++i ){
 		for (int j = i+1 ; j < 4; ++j ){
 			std::swap(view[i][j], view[j][i]);
@@ -35,7 +34,7 @@ Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 Mat4f perspective(float fov,float aspect, float n, float f)
 {
 	fov = int(fov)%180/180.f*3.1415926/2;
-	float h = n*tan(fov);
+	float h = 2*n*tan(fov);
 	float w = h*aspect;
 	Mat4f projection = 
 	{
