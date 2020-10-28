@@ -122,7 +122,7 @@ int main(int argc, char * argv[])
 	pipeline.useShader(shader);
 	
 	//第一个
-	Vec3f campos(-20, 20, -20);
+	Vec3f campos(0, 0, -20);
 	Vec3f up(0, 1, 0);
 	Vec3f lookDir(0, 0, 1);
 	float yaw = 0.f, pitch = 0.f;
