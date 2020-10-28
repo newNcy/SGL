@@ -1,17 +1,17 @@
 project(sgl)
 
 set(SDL third_part/SDL2-2.0.12)
-set(GLM third_part/glm)
+set(SOIL third_part/soil)
 
 cmake_minimum_required(VERSION 3.17)
 
 add_subdirectory(${SDL})
-add_subdirectory(${GLM})
+add_subdirectory(${SOIL})
 
 include_directories(
 	src 
 	${SDL}/include
-	${GLM}
+	${SOIL}/src
 	)
 
 
@@ -28,7 +28,7 @@ if (COMMAND cmake_policy)
 endif (COMMAND cmake_policy)
 
 
-add_definitions("-g")
+add_definitions("-g -static-libstdc++")
 
 add_executable(app src/main.cpp)
 target_link_libraries(app sgl sgl_debug sgl_math mingw32 SDL2main SDL2-static)

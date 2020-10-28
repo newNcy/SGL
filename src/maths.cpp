@@ -5,8 +5,8 @@
 Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 {
 	auto front = normalize(target - pos);
-	auto right = normalize(cross(front, up));
-	auto camup = normalize(cross(right, front));
+	auto right = normalize(cross(up, front));
+	auto camup = normalize(cross(front, right));
 
 	Mat4f view = 
 	{
@@ -39,7 +39,7 @@ Mat4f perspective(float fov,float aspect, float n, float f)
 	float w = h*aspect;
 	Mat4f projection = 
 	{
-		{-2*n/w, 0,			0,				0},
+		{2*n/w, 0,			0,				0},
 		{0,		2*n/h,		0,				0},
 		{0,		0,			(f+n)/(f-n),	1},
 		{0,		0,			-2*f*n/(f-n),	0},

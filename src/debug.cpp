@@ -1,4 +1,6 @@
 #include "debug.h"
+int Profile::tab = 0;
+bool Profile::clear = false;
 
 void print(const Mat4f & m, char end)
 {

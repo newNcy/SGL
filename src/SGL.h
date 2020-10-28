@@ -18,11 +18,8 @@ void releaseSGL();
 struct Vertex
 {
 	Vec3f position;	//位置
-	union 
-	{
-		Vec3f color;	//颜色
-		Vec2f uv;		//纹理坐标
-	};
+	Vec3f color;	//颜色
+	Vec2f uv;		//纹理坐标
 	Vec3f norm;		//法向量
 };
 
@@ -37,6 +34,14 @@ struct ScreenPoint
 	Vec2i position;
 	Vec3f color;
 	float depth = 0;
+};
+
+struct Texture
+{
+	Texture(int width, int height): width(width), height(height), data(new unsigned char[width*height*3]) {}
+	int width = 0;
+	int height = 0;
+	unsigned char * data = nullptr;
 };
 
 class SGLContext
