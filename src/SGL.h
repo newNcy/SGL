@@ -36,6 +36,16 @@ struct ScreenPoint
 	float depth = 0;
 };
 
+struct V2f 
+{
+	Vec4f position;
+	Vec3f color;	//颜色
+	Vec2f uv;		//纹理坐标
+	Vec3f norm;		//法向量
+};
+
+V2f lerp(const V2f & start, const V2f & end, float factor);
+
 struct Texture
 {
 	Texture(int width, int height): width(width), height(height), data(new unsigned char[width*height*3]) {}
@@ -93,6 +103,8 @@ class SGLPineline
 
 		void drawArray(const Vertex * verties, size_t count, DrawMode drawMode);
 		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
+		
+		void drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 
 	private:
 		void draw(const std::vector<Vertex> & verts, DrawMode mode);

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <stdio.h>
 
+
 template <typename T>
 struct Vec2
 {
@@ -65,6 +66,7 @@ struct Vec4
 	Type operator * (float f) const { return Type(x*f, y*f, z*f, w*f); }
 	Type operator / (float f) const { return Type(x/f, y/f, z/f, w/f); }
 	T & operator [] (unsigned int index) { assert(index < 4); return data[index];}
+	T operator * (const Type & rhs) const { return x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w; }
 	const T & operator [] (unsigned int index) const { assert(index < 4); return data[index];}
 };
 
@@ -86,6 +88,11 @@ struct Mat4
 	const Vec4 & operator [] (unsigned int index) const { assert(index < 4); return data[index];}
 };
 
+template <typename T>
+T lerp(const T & start, const T & end, float factor)
+{
+	return start*(1.f-factor) + end*factor;
+}
 
 template <typename T>
 Vec3<T> cross(const Vec3<T> & lhs, const Vec3<T> & rhs)
@@ -134,6 +141,8 @@ Vec4<T> operator * (const Vec4<T> & vec, const Mat4<T> & mat)
 	return ret;
 }
 
+
+
 using Vec2i = Vec2<int>;
 using Vec2f = Vec2<float>;
 using Vec3i = Vec3<int>;
@@ -149,3 +158,5 @@ Mat4f perspective(float fov, float aspect, float n, float f);
 Mat4f moveto(float x, float y, float z);
 Mat4f rotate(float x, float y, float z);
 Mat4f scale(float x, float y, float z);
+
+

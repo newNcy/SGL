@@ -20,7 +20,7 @@ struct Profile
 	{
 		tab --;
 		if (!clear) {
-			printf("\e[2Ji\e[?25l");
+			printf("\e[2J\e[?25l");
 			clear = true;
 		}
 		if (!tab) {
@@ -29,9 +29,9 @@ struct Profile
 		auto end = std::chrono::system_clock::now();
 		auto use = end - start;
 		for (int i = 0 ; i < tab; ++ i) {
-			printf("\t");
+			printf("    ");
 		}
-		printf("[%s] uses %d ms\n", tag, use.count()/1000000);
+		printf("[%s] uses %d ms              \n", tag, use.count()/1000000);
 		fflush(stdout);
 	}
 };

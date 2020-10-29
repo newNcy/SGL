@@ -5,6 +5,7 @@
 #include <cmath>
 #include "debug.h"
 
+
 bool initSGL()
 {
 	return SDL_Init(SDL_INIT_EVERYTHING);
@@ -139,6 +140,7 @@ void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, b
 	int dy = e.y - s.y;
 	int dx = e.x - s.x;
 	bool steep = abs(dy) > abs(dx);
+	bool needEx = false;
 	if (steep) {
 		std::swap(dx, dy);
 		std::swap(s.x, s.y);
@@ -148,8 +150,6 @@ void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, b
 	if (s.x > e.x) {
 		std::swap(s.x, e.x);
 		std::swap(s.y, e.y);
-		std::swap(ca, cb);
-		std::swap(da, db);
 	}
 
 	float k = abs(float(dy) / dx);
@@ -158,8 +158,8 @@ void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, b
 
 	while (s.x != e.x) {
 		auto left = float(e.x - s.x)/dx;
-		Vec3f color = ca*(1-left) + cb*left;
-		float depth = da*(1-left) + db*left;
+		Vec3f color = lerp(ca, cb, (1.f-left));
+		float depth = lerp(da, db, (1.f-left));
 		int x = s.x, y = s.y;
 		if (steep) {
 			std::swap(x, y);
@@ -196,6 +196,16 @@ BoundingBox bbox(const FrameBuffer & frame, const Vec2i & a, const Vec2i & b,con
 			}
 		}
 	}
+	return ret;
+}
+
+V2f lerp(const V2f & start, const V2f & end, float factor)
+{
+	V2f ret;
+	ret.position = lerp(start.position, end.position, factor);
+	ret.color = lerp(start.color, end.color, factor);
+	ret.uv = lerp(start.uv, end.uv, factor);
+	ret.norm = lerp(start.norm, end.norm, factor);
 	return ret;
 }
 
@@ -260,10 +270,10 @@ bool SGLPineline::needClip(const Vec3f & pos)
 
 Vec2i SGLPineline::viewPortTrans(const Vec4f & pos)
 {
-	float x = (pos.x + 1)*0.5;
-	float y = (-pos.y + 1)*0.5;
+	float x = (pos.x + 1)*0.5f;
+	float y = (-pos.y + 1)*0.5f;
 
-	return Vec2i(x*currentFrame->getWidth(), y*currentFrame->getHeight());
+	return Vec2i(x*(currentFrame->getWidth()-1), y*(currentFrame->getHeight()-1));
 }
 		
 void SGLPineline::drawArrayLine(const Vertex * verties, size_t count, DrawMode drawMode)
@@ -332,4 +342,123 @@ void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned in
 	}
 
 	draw(clipPoints, drawMode);
+}
+
+
+std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
+{
+	if (out.size() < 2) {
+		return out;
+	}
+
+	const std::vector<Vec4f> planes = 
+	{
+		{1, 0, 0, 1},
+		{-1, 0, 0, 1},
+		{0, 1, 0, 1},
+		{0, -1, 0, 1},
+		{0, 0, 1, 1},
+		{0, 0, -1, 1}
+	};
+
+	std::vector<V2f> in;
+	int idx = 0;
+	for (auto & plane : planes) {
+		std::swap(in, out);
+		out.clear();
+		for (int i = 0, j = 1; i < in.size(); ++ i, ++ j) {
+			if (j == in.size()) {
+				j = 0;
+			}
+			float di = in[i].position * plane;
+			float dj = in[j].position * plane;
+			int code = (dj >= 0.001) | ((di>= 0.001)<<1);
+			switch(code) {
+				case 0: //都不在
+					break;
+				case 1: //i不在 j在
+					{
+						V2f clip = lerp(in[i], in[j], di/(di-dj));
+						out.push_back(clip);
+						out.push_back(in[j]);
+					}
+					break;
+				case 2: //i在j不在
+					{
+						V2f clip = lerp(in[i], in[j], di/(di-dj));
+						out.push_back(clip);
+					}
+					break;
+				case 3:
+					{
+						out.push_back(in[j]);
+					}
+					break;
+			}
+		}
+	}
+	return out;
+}
+
+void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+{
+	if (!verties || !indices || !currentFrame || !shader) return;
+
+	int vertCount = indiesCount;
+	if (drawMode == DrawMode::SGL_LINE) {
+		if (vertCount < 2) {
+			return;
+		}
+	}else if (drawMode == DrawMode::SGL_TRIANGLE) {
+		if (vertCount < 3) {
+			return;
+		}
+		vertCount = vertCount/3*3;
+	}
+
+
+	std::vector<V2f> points;
+	for (int i = 0; i < vertCount; ++ i) {
+		Vertex v = verties[indices[i]];
+		V2f v2f;
+		v2f.position = shader->onVertex(v.position);
+		v2f.color = v.color;
+		points.push_back(v2f);
+		if (points.size() == 3) {
+			//printf("triangle\n");
+			for (auto p : points) {
+				//print(p.position, 4);
+			}
+			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
+			if (clips.size()) {
+				//printf("clips\n");
+				ScreenPoint a;
+				a.position = viewPortTrans(clips[0].position/clips[0].position.w);
+				a.color = clips[0].color;
+				a.depth = clips[0].position.z/clips[0].position.w;
+				//print(clips[0].position, 4);
+
+				int last = 1;
+				while (last < clips.size() - 1) {
+					//print(clips[last].position, 4);
+					//print(clips[last+1].position, 4);
+					ScreenPoint b,c;
+					b.position = viewPortTrans(clips[last].position/clips[last].position.w);
+					b.color = clips[last].color;
+					b.depth = clips[last].position.z/clips[last].position.w;
+
+					c.position = viewPortTrans(clips[last+1].position/clips[last+1].position.w);
+					c.color = clips[last+1].color;
+					c.depth = clips[last+1].position.z/clips[last+1].position.w;
+					drawScreenTriangle(a, b, c, true);
+					//drawScreenLine(a, b, true);
+					//drawScreenLine(b, c, true);
+					//drawScreenLine(c, a, true);
+					last ++;
+				}
+			}
+			points.clear();
+		}
+	}
+
 }

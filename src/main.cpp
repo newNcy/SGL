@@ -98,7 +98,7 @@ int main(int argc, char * argv[])
 			NormalShader()
 			{
 				//print(view);
-				projection = perspective(90, 1.f, .1f, 1000);
+				projection = perspective(90, 1.f, 3.f, 100);
 			}
 
 			Vec4f onVertex(const Vec3f & pos) override
@@ -118,11 +118,11 @@ int main(int argc, char * argv[])
 		}
 	};
 
-	auto shader = std::make_shared<TextureShader>();
+	auto shader = std::make_shared<NormalShader>();
 	pipeline.useShader(shader);
 	
 	//第一个
-	Vec3f campos(0, 0, -20);
+	Vec3f campos(0, 0, -6);
 	Vec3f up(0, 1, 0);
 	Vec3f lookDir(0, 0, 1);
 	float yaw = 0.f, pitch = 0.f;
@@ -143,7 +143,10 @@ int main(int argc, char * argv[])
 	long useTime = 0;
 	float fps = 0.f;
 
+	pipeline.clearColor(.5f, .5f, .5f);
+	pipeline.clearDepth(1.f);
 	auto lastTime = std::chrono::system_clock::now();
+	sgl.swapBuffer(pipeline.getCurrentFrameBuffer());
 	while (!quit) {
 		PROFILE(frame);
 		{
@@ -151,9 +154,18 @@ int main(int argc, char * argv[])
 			pipeline.clearColor(.5f, .5f, .5f);
 			pipeline.clearDepth(1.f);
 
-			auto model = rotate(15,15,0) * moveto(-5, 0, 0) ;
+			auto model = scale(5,5,5);
+			shader->setModel(model);
+			pipeline.drawElements2(cube, 8, indies, 36, mode);
+			
+			model = rotate(-15,-15,0) * moveto(3, 0, 0) ;
+			shader->setModel(model);
+			//pipeline.drawElements2(cube, 8, indies, 36, mode);
+			/*
+			auto model = rotate(15,15,0);
 			shader->setModel(model);
 			pipeline.drawElements(cube, 8, indies, 36, mode);
+
 			//第二个
 			model = rotate(-15,-15,0) * moveto(3, 0, 0) ;
 			shader->setModel(model);
@@ -167,6 +179,7 @@ int main(int argc, char * argv[])
 			model = rotate(-15,-15,0) * moveto(0, -3, 0) ;
 			shader->setModel(model);
 			pipeline.drawElements(cube, 8, indies, 36, mode);
+			*/
 		}
 
 		/*
