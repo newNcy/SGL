@@ -1,3 +1,0 @@
-D:/opengl/test/third_part/soil/cmake-build-debug/CMakeFiles/SOIL.dir
-D:/opengl/test/third_part/soil/cmake-build-debug/CMakeFiles/edit_cache.dir
-D:/opengl/test/third_part/soil/cmake-build-debug/CMakeFiles/rebuild_cache.dir
