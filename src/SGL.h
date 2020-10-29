@@ -48,7 +48,9 @@ V2f lerp(const V2f & start, const V2f & end, float factor);
 
 struct Texture
 {
-	Texture(int width, int height): width(width), height(height), data(new unsigned char[width*height*3]) {}
+	Texture(const char * path);
+	Vec4f sample(float u, float v);
+	~Texture();
 	int width = 0;
 	int height = 0;
 	unsigned char * data = nullptr;
@@ -67,7 +69,7 @@ class SGLContext
 		SDL_Window * window = nullptr;
 		SDL_Renderer * renderer = nullptr;
 		SDL_Texture * renderBuffer = nullptr;
-		uint8_t * rgb888 = nullptr;
+		uint8_t * rgba8888 = nullptr;
 };
 
 
@@ -75,7 +77,7 @@ class SGLShader
 {	
 	public:
 		virtual Vec4f onVertex(const Vec3f & pos) { return Vec4f(pos, 1); }
-		virtual Vec4f onFragment(const Vertex & vert) { return Vec4f(vert.color,1); }
+		virtual Vec4f onFragment(const V2f & vert) { return Vec4f(vert.color,1); }
 		~SGLShader() {}
 };
 
@@ -104,6 +106,7 @@ class SGLPineline
 		void drawArray(const Vertex * verties, size_t count, DrawMode drawMode);
 		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 		
+		void drawTriangle(const V2f & a, const V2f & b, const V2f & c);
 		void drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 
 	private:

@@ -7,12 +7,12 @@
 class FrameBuffer
 {
 	public:
-		using Pixel = Vec3f;
+		using Pixel = Vec4f;
 		FrameBuffer(int width, int height);
 		~FrameBuffer();
 
 		int xy2idx(int x, int y) const;
-		void setPixel(int x, int y, float r, float g, float b);
+		void setPixel(int x, int y, float r, float g, float b, float a = 1);
 		void setPixel(int x, int y, const Pixel & pixel);
 		const Pixel & getPixel(int x, int y) const ;
 		float getDepth(int x, int y) const;

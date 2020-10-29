@@ -48,9 +48,9 @@ int main(int argc, char * argv[])
 	Vertex cube[] = 
 	{
 		{{-1.f, 1.f, -1.f}, {1.f,0.f,0.f},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f, -1.f}, {0.f,0.f,1.f},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {1.f,1.f,1.f},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f, -1.f}, {1.f,1.f,1.f},{0,0}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f, -1.f}, {1.f,0.f,0.f},{1,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f, -1.f}, {1.f,0.f,0.f},{1,0}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f, -1.f}, {1.f,0.f,0.f},{0,0}, {0.f,0.f,0.f}},
 
 		{{-1.f, 1.f,  1.f}, {0.f,1.f,0.f},{0,1}, {0.f,0.f,0.f}},
 		{{ 1.f, 1.f,  1.f}, {0.f,1.f,0.f},{1,1}, {0.f,0.f,0.f}},
@@ -110,14 +110,12 @@ int main(int argc, char * argv[])
 	class TextureShader : public NormalShader
 	{
 		protected:
-			
-		Vec4f onFragment(const Vertex & v) override
-		{
-			Vec4f ret;
-			return ret;
-		}
+			std::shared_ptr<Texture> texture;
+			Vec4f onFragment(const V2f & v) override
+			{
+				return texture->sample(v.uv.u, v.uv.v);
+			}
 	};
-
 	auto shader = std::make_shared<NormalShader>();
 	pipeline.useShader(shader);
 	

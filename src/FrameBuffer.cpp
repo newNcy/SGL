@@ -17,12 +17,13 @@ int FrameBuffer::xy2idx(int x, int y) const
 	return y*width + x;
 }
 
-void FrameBuffer::setPixel(int x, int y, float r, float g, float b)
+void FrameBuffer::setPixel(int x, int y, float r, float g, float b, float a)
 {
 	int idx = xy2idx(x, y);
 	pixels[idx].r = r;
 	pixels[idx].g = g;
 	pixels[idx].b = b;
+	pixels[idx].a = a;
 }
 
 void FrameBuffer::setPixel(int x, int y, const Pixel & pixel)

@@ -54,7 +54,7 @@ struct Vec4
 	union 
 	{
 		struct { T x,y,z,w; };
-		struct { T r,g,b,a; };
+		struct { T r,g,b,a = 1; };
 		T data[4];
 	};
 	Vec4():x(0), y(0),z(0),w(0) {}

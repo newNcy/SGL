@@ -36,7 +36,7 @@ bool SGLContext::init(const char * winTitle, int x, int y, int width, int height
 		destroy();
 		return false;
 	}
-	rgb888 = new uint8_t[width*height*4];
+	rgba8888 = new uint8_t[width*height*4];
 	return true;
 }
 
@@ -49,12 +49,13 @@ void SGLContext::swapBuffer(const FrameBuffer & buffer)
 				int start = (y * buffer.getWidth() + x)*4;
 				auto & pixel = buffer.getPixel(x, y);
 
-				rgb888[start+2] = 255*pixel.r;
-				rgb888[start+1] = 255*pixel.g;
-				rgb888[start+0] = 255*pixel.b;
+				rgba8888[start] = 255*pixel.b;
+				rgba8888[start+1] = 255*pixel.g;
+				rgba8888[start+2] = 255*pixel.r;
+				rgba8888[start+3] = 255*pixel.a;
 			}
 		}
-		SDL_UpdateTexture(renderBuffer, nullptr, rgb888, buffer.getWidth()*4);
+		SDL_UpdateTexture(renderBuffer, nullptr, rgba8888, buffer.getWidth()*4);
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, renderBuffer, nullptr, nullptr);
 		SDL_RenderPresent(renderer);
@@ -71,9 +72,9 @@ void SGLContext::destroy()
 		SDL_DestroyWindow(window);
 		window = nullptr;
 	}
-	if (rgb888) {
-		delete [] rgb888;
-		rgb888 = nullptr;
+	if (rgba8888) {
+		delete [] rgba8888;
+		rgba8888 = nullptr;
 	}
 }
 
@@ -294,7 +295,7 @@ void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 			if (needClip(vert.position)) {
 				continue;
 			}
-			auto color = shader->onFragment(vert);
+			Vec4f color;// = shader->onFragment(vert);
 			ScreenPoint p;
 			p.position = viewPortTrans(vert.position);
 			p.color = Vec3f(color.r, color.g, color.b);
@@ -344,6 +345,56 @@ void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned in
 	draw(clipPoints, drawMode);
 }
 
+void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
+{
+	if (!currentFrame) {
+		return;
+	}
+
+	auto clipA = a.position/a.position.w;
+	auto clipB = b.position/b.position.w;
+	auto clipC = c.position/c.position.w;
+
+	auto A = viewPortTrans(clipA);
+	auto B = viewPortTrans(clipB);
+	auto C = viewPortTrans(clipC);
+
+	auto bb = bbox(*currentFrame, A, B, C);
+	float S = calcS(A, B, C);
+	if (!S) {
+		return;
+	}
+
+	for (int x = bb.min.x; x <= bb.max.x; ++ x) {
+		for (int y = bb.min.y; y <= bb.max.y; ++ y) {
+			Vec2i p(x, y);
+			float s1 = calcS(B,p,C);
+			float s2 = calcS(A,p,C);
+			float s3 = calcS(A,p,B);
+			
+			float w1= s1/S;
+			float w2 = s2/S;
+			float w3 = s3/S;
+
+			float depth = clipA.z*w1+ clipB.z*w2 + clipC.z*w3;
+			V2f f;
+			f.position = a.position*w1 + b.position*w2 + c.position*w3;
+			f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
+			f.norm = a.norm*w1 + b.norm*w2 + c.norm*w3;
+			f.color = a.color*w1+ b.color*w2+ c.color*w3;
+
+			auto color = shader->onFragment(f);
+			
+			if (s1+s2+s3 <= S) {
+				float depthBuf = currentFrame->getDepth(x, y);
+				if (depthBuf > depth) {
+					currentFrame->setPixel(x, y, color);
+					currentFrame->setDepth(x, y, depth);
+				}
+			}		
+		}
+	}
+}
 
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
@@ -424,36 +475,14 @@ void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned i
 		v2f.position = shader->onVertex(v.position);
 		v2f.color = v.color;
 		points.push_back(v2f);
+
 		if (points.size() == 3) {
-			//printf("triangle\n");
-			for (auto p : points) {
-				//print(p.position, 4);
-			}
 			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
 			if (clips.size()) {
-				//printf("clips\n");
-				ScreenPoint a;
-				a.position = viewPortTrans(clips[0].position/clips[0].position.w);
-				a.color = clips[0].color;
-				a.depth = clips[0].position.z/clips[0].position.w;
-				//print(clips[0].position, 4);
 
 				int last = 1;
 				while (last < clips.size() - 1) {
-					//print(clips[last].position, 4);
-					//print(clips[last+1].position, 4);
-					ScreenPoint b,c;
-					b.position = viewPortTrans(clips[last].position/clips[last].position.w);
-					b.color = clips[last].color;
-					b.depth = clips[last].position.z/clips[last].position.w;
-
-					c.position = viewPortTrans(clips[last+1].position/clips[last+1].position.w);
-					c.color = clips[last+1].color;
-					c.depth = clips[last+1].position.z/clips[last+1].position.w;
-					drawScreenTriangle(a, b, c, true);
-					//drawScreenLine(a, b, true);
-					//drawScreenLine(b, c, true);
-					//drawScreenLine(c, a, true);
+					drawTriangle(clips[0], clips[last], clips[last+1]);
 					last ++;
 				}
 			}
@@ -461,4 +490,22 @@ void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned i
 		}
 	}
 
+}
+
+Texture::Texture(const char * path)
+{
+	//data = SOIL_load_image(path, &width, &height, 0, SOIL_LOAD_RGB);
+}
+
+Vec4f Texture::sample(float u, float v)
+{
+	int x = u*(width-1);
+	int y = (1-v)*(height-1);
+	unsigned char * p = data + y*width + x;
+	return Vec4f(p[0], p[1], p[2], 1.f);
+}
+
+Texture::~Texture()
+{
+	//SOIL_free_image_data(data);
 }
