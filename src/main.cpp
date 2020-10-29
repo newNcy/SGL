@@ -16,67 +16,55 @@ int main(int argc, char * argv[])
 	SGLPineline pipeline;
 	pipeline.makeFrameBuffer(800, 800);
 
-	ScreenPoint a = 
-	{
-		{400,100},
-		{1, 0, 0}
-	};
-	
-	ScreenPoint b = 
-	{
-		{700, 300},
-		{0, 1, 0}
-	};
-	
-	ScreenPoint c = 
-	{
-		{100, 500},
-		{0, 0, 1}
-	};
-	
-	ScreenPoint d = 
-	{
-		{100, 100},
-		{0, 0, 1}
-	};
-
-	//pipeline.drawScreenLine(a, d);
-
-	//pipeline.drawScreenTriangle(a, b, c);
-
-
 	Vertex cube[] = 
 	{
-		{{-1.f, 1.f, -1.f}, {1.f,0.f,0.f},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f, -1.f}, {1.f,0.f,0.f},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {1.f,0.f,0.f},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f, -1.f}, {1.f,0.f,0.f},{0,0}, {0.f,0.f,0.f}},
+		//前
+		{{-1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f, -1.f}, {},{1,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f, -1.f}, {},{0,0}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
 
-		{{-1.f, 1.f,  1.f}, {0.f,1.f,0.f},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f,  1.f}, {0.f,1.f,0.f},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {0.f,1.f,0.f},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f,  1.f}, {0.f,1.f,0.f},{0,0}, {0.f,0.f,0.f}}
-	};
+		//后
+		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f,  1.f}, {},{1,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
+	
+		//左
+		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f, -1.f}, {},{1,1}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
 
-	unsigned int indies[] = 
-	{
-		0, 1, 2, 
-		0, 3, 2,
+		//右
+		{{ 1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f,  1.f}, {},{1,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f, -1.f}, {},{0,0}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
 
-		4, 5, 6,
-		4, 7, 6,
+		//上
+		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f,  1.f}, {},{1,1}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{-1.f, 1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
+		{{ 1.f, 1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
 
-		4, 0, 3,
-		4, 7, 3,
-
-		1, 5, 6,
-		1, 2, 6,
-
-		4, 5, 1,
-		4, 0, 1,
-		
-		3, 2, 6,
-		3, 7, 6
+		//下
+		{{-1.f,-1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f, -1.f}, {},{1,1}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
+		{{-1.f,-1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
+		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
 	};
 
 	class NormalShader : public SGLShader
@@ -98,29 +86,39 @@ int main(int argc, char * argv[])
 			NormalShader()
 			{
 				//print(view);
-				projection = perspective(90, 1.f, 3.f, 100);
+				projection = perspective(90, 1.f, .1f, 1000);
 			}
 
-			Vec4f onVertex(const Vec3f & pos) override
+			void onVertex(const Vertex & vert, V2f & out) override
 			{
-				Vec4f ret = Vec4f(pos,1) * model * view * projection;
-				return ret;
+				out.position = Vec4f(vert.position,1) * model * view * projection;
 			}
 	};
 	class TextureShader : public NormalShader
 	{
 		protected:
 			std::shared_ptr<Texture> texture;
-			Vec4f onFragment(const V2f & v) override
+		public:
+			TextureShader()
 			{
-				return texture->sample(v.uv.u, v.uv.v);
+				texture.reset(new Texture("../resource/image/container.jpg"));
+			}
+
+			void onVertex(const Vertex & vert, V2f & out) override
+			{
+				out.position = Vec4f(vert.position,1) * model * view * projection;
+			}
+
+			void onFragment(const V2f & v, Vec4f & color) override
+			{
+				color = texture->sample(v.uv.u, v.uv.v);
 			}
 	};
-	auto shader = std::make_shared<NormalShader>();
+	auto shader = std::make_shared<TextureShader>();
 	pipeline.useShader(shader);
 	
 	//第一个
-	Vec3f campos(0, 0, -6);
+	Vec3f campos(0, 0, -20);
 	Vec3f up(0, 1, 0);
 	Vec3f lookDir(0, 0, 1);
 	float yaw = 0.f, pitch = 0.f;
@@ -154,7 +152,7 @@ int main(int argc, char * argv[])
 
 			auto model = scale(5,5,5);
 			shader->setModel(model);
-			pipeline.drawElements2(cube, 8, indies, 36, mode);
+			pipeline.drawArray(cube, 36, mode);
 			
 			model = rotate(-15,-15,0) * moveto(3, 0, 0) ;
 			shader->setModel(model);

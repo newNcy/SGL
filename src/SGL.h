@@ -51,8 +51,11 @@ struct Texture
 	Texture(const char * path);
 	Vec4f sample(float u, float v);
 	~Texture();
+
+	SDL_Texture * sdlTexture = nullptr;
 	int width = 0;
 	int height = 0;
+	int n = 0;
 	unsigned char * data = nullptr;
 };
 
@@ -76,8 +79,11 @@ class SGLContext
 class SGLShader
 {	
 	public:
-		virtual Vec4f onVertex(const Vec3f & pos) { return Vec4f(pos, 1); }
-		virtual Vec4f onFragment(const V2f & vert) { return Vec4f(vert.color,1); }
+		virtual void onVertex(const Vertex & vert, V2f & out) 
+		{ 
+		}
+		virtual void onFragment(const V2f & v2f, Vec4f & color) 
+		{ color = Vec4f(v2f.color,1); }
 		~SGLShader() {}
 };
 
@@ -104,7 +110,6 @@ class SGLPineline
 		void clearDepth(float d);
 
 		void drawArray(const Vertex * verties, size_t count, DrawMode drawMode);
-		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 		
 		void drawTriangle(const V2f & a, const V2f & b, const V2f & c);
 		void drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);

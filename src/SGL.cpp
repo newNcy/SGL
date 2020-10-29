@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cmath>
 #include "debug.h"
+#define STB_IMAGE_IMPLEMENTATION 
+#include "stb_image.h"
 
 
 bool initSGL()
@@ -281,9 +283,6 @@ void SGLPineline::drawArrayLine(const Vertex * verties, size_t count, DrawMode d
 {
 }
 
-void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawMode)
-{
-}
 
 void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 {
@@ -313,36 +312,6 @@ void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 
 		}
 	}
-}
-
-void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
-{
-	if (!verties || !indices || !currentFrame || !shader) return;
-
-	int vertCount = indiesCount;
-	if (drawMode == DrawMode::SGL_LINE) {
-		if (vertCount < 2) {
-			return;
-		}
-	}else if (drawMode == DrawMode::SGL_TRIANGLE) {
-		if (vertCount < 3) {
-			return;
-		}
-		vertCount = vertCount/3*3;
-	}
-
-	std::vector<Vertex> clipPoints;
-
-	//顶点计算
-	for (int i = 0; i < vertCount; ++ i) {
-		Vertex v = verties[indices[i]];
-		Vec4f clip = shader->onVertex(v.position);
-		clip = clip/clip.w;
-		v.position = Vec3f(clip.x, clip.y, clip.z);
-		clipPoints.push_back(v);
-	}
-
-	draw(clipPoints, drawMode);
 }
 
 void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
@@ -379,11 +348,13 @@ void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
 			float depth = clipA.z*w1+ clipB.z*w2 + clipC.z*w3;
 			V2f f;
 			f.position = a.position*w1 + b.position*w2 + c.position*w3;
-			f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
+			f.uv = a.uv/a.position.w*w1 + b.uv/b.position.w*w2 + c.uv/c.position.w*w3;
+			f.uv = f.uv*f.position.w;
 			f.norm = a.norm*w1 + b.norm*w2 + c.norm*w3;
 			f.color = a.color*w1+ b.color*w2+ c.color*w3;
 
-			auto color = shader->onFragment(f);
+			Vec4f color;
+			shader->onFragment(f, color);
 			
 			if (s1+s2+s3 <= S) {
 				float depthBuf = currentFrame->getDepth(x, y);
@@ -451,30 +422,51 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 	return out;
 }
 
+void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawMode)
+{
+	if (!verties || !currentFrame || !shader) {
+		return;
+	}
+
+	std::vector<V2f> points;
+	for (int i = 0; i < count; ++ i) {
+		Vertex v = verties[i];
+		V2f out;
+		out.position = v.position;
+		out.color = v.color;
+		out.uv = v.uv;
+		out.norm = v.norm;
+		shader->onVertex(v, out);
+		points.push_back(out);
+
+		if (points.size() == 3) {
+			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
+			if (clips.size()) {
+
+				int last = 1;
+				while (last < clips.size() - 1) {
+					drawTriangle(clips[0], clips[last], clips[last+1]);
+					last ++;
+				}
+			}
+			points.clear();
+		}
+	}
+}
 void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
 {
 	if (!verties || !indices || !currentFrame || !shader) return;
 
-	int vertCount = indiesCount;
-	if (drawMode == DrawMode::SGL_LINE) {
-		if (vertCount < 2) {
-			return;
-		}
-	}else if (drawMode == DrawMode::SGL_TRIANGLE) {
-		if (vertCount < 3) {
-			return;
-		}
-		vertCount = vertCount/3*3;
-	}
-
-
 	std::vector<V2f> points;
-	for (int i = 0; i < vertCount; ++ i) {
+	for (int i = 0; i < indiesCount; ++ i) {
 		Vertex v = verties[indices[i]];
-		V2f v2f;
-		v2f.position = shader->onVertex(v.position);
-		v2f.color = v.color;
-		points.push_back(v2f);
+		V2f out;
+		out.position = v.position;
+		out.color = v.color;
+		out.uv = v.uv;
+		out.norm = v.norm;
+		shader->onVertex(v, out);
+		points.push_back(out);
 
 		if (points.size() == 3) {
 			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
@@ -494,18 +486,23 @@ void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned i
 
 Texture::Texture(const char * path)
 {
-	//data = SOIL_load_image(path, &width, &height, 0, SOIL_LOAD_RGB);
+	data = stbi_load(path, &width, &height, &n, 0);
 }
 
 Vec4f Texture::sample(float u, float v)
 {
 	int x = u*(width-1);
 	int y = (1-v)*(height-1);
-	unsigned char * p = data + y*width + x;
-	return Vec4f(p[0], p[1], p[2], 1.f);
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
+	if (x >= width) x = width -1;
+	if (y >= height) y = height-1;
+	unsigned char * p = data + y*n*width + x*n;
+	Vec4f ret(p[0]/255.f, p[1]/255.f,p[2]/255.f, 1.f);
+	return ret;
 }
 
 Texture::~Texture()
 {
-	//SOIL_free_image_data(data);
+	stbi_image_free(data);
 }
