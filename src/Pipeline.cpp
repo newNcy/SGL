@@ -239,6 +239,7 @@ void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
 		return;
 	}
 
+	PROFILE(triangle);
 	auto clipA = a.position/a.position.w;
 	auto clipB = b.position/b.position.w;
 	auto clipC = c.position/c.position.w;
@@ -295,6 +296,7 @@ bool inside(const V2f & v)
 
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
+	PROFILE(SutherlandHodgeman)
 	if (out.size() < 2) {
 		return std::move(out);
 	}
@@ -386,7 +388,6 @@ void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
 		if (points.size() == 3) {
 			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
 			if (clips.size()) {
-
 				int last = 1;
 				while (last < clips.size() - 1) {
 					drawTriangle(clips[0], clips[last], clips[last+1]);

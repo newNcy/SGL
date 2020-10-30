@@ -74,10 +74,12 @@ int main(int argc, char * argv[])
 			pipeline.drawArray(&ground[0], 6, mode);
 
 			
+			/*
 			//绘制球体
 			model = moveto(10,1, 5);
 			colorShader->setModel(model);
 			pipeline.drawArray(&sphare[0], sphare.size(), mode);
+			*/
 		}
 
 		SDL_Event event;
@@ -147,6 +149,7 @@ int main(int argc, char * argv[])
 			useTime = 0;
 			frameCount = 0;
 		}
+		Profiler::show();
 	}
 
 	sgl.destroy();
