@@ -6,6 +6,7 @@
 #include "SGL.h"
 #include "maths.h"
 #include "debug.h"
+#include "geometry.h"
 
 int main(int argc, char * argv[])
 {
@@ -16,57 +17,7 @@ int main(int argc, char * argv[])
 	SGLPineline pipeline;
 	pipeline.makeFrameBuffer(800, 800);
 
-	Vertex cube[] = 
-	{
-		//前
-		{{-1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f, -1.f}, {},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f, -1.f}, {},{0,0}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
-
-		//后
-		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f,  1.f}, {},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-	
-		//左
-		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{-1.f, 1.f, -1.f}, {},{1,1}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f, -1.f}, {},{1,0}, {0.f,0.f,0.f}},
-
-		//右
-		{{ 1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f,  1.f}, {},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {},{0,0}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-
-		//上
-		{{-1.f, 1.f,  1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f,  1.f}, {},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{-1.f, 1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
-		{{ 1.f, 1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-
-		//下
-		{{-1.f,-1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f, -1.f}, {},{1,1}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f, -1.f}, {},{0,1}, {0.f,0.f,0.f}},
-		{{-1.f,-1.f,  1.f}, {},{0,0}, {0.f,0.f,0.f}},
-		{{ 1.f,-1.f,  1.f}, {},{1,0}, {0.f,0.f,0.f}},
-	};
-
+	auto cube = genCube();
 	class NormalShader : public SGLShader
 	{
 		const float pi = 3.1415926;
@@ -115,10 +66,13 @@ int main(int argc, char * argv[])
 			}
 	};
 	auto shader = std::make_shared<TextureShader>();
+	auto colorShader = std::make_shared<NormalShader>();
+
 	pipeline.useShader(shader);
-	
+
+	auto sphare = genSphare(1.f);
 	//第一个
-	Vec3f campos(0, 0, -20);
+	Vec3f campos(0, 0, -30);
 	Vec3f up(0, 1, 0);
 	Vec3f lookDir(0, 0, 1);
 	float yaw = 0.f, pitch = 0.f;
@@ -143,20 +97,26 @@ int main(int argc, char * argv[])
 	pipeline.clearDepth(1.f);
 	auto lastTime = std::chrono::system_clock::now();
 	sgl.swapBuffer(pipeline.getCurrentFrameBuffer());
+	float ang = 0;
 	while (!quit) {
 		PROFILE(frame);
 		{
 			PROFILE(rendering);
 			pipeline.clearColor(.5f, .5f, .5f);
 			pipeline.clearDepth(1.f);
+			ang += 5;
+			auto model = scale(5,5,5) * rotate(ang, ang, ang);
+			shader->setModel(model);
+			shader->setCamera(view);
+			pipeline.useShader(shader);
+			pipeline.drawArray(&cube[0], 36, mode);	
 
-			auto model = scale(5,5,5);
-			shader->setModel(model);
-			pipeline.drawArray(cube, 36, mode);
-			
-			model = rotate(-15,-15,0) * moveto(3, 0, 0) ;
-			shader->setModel(model);
-			//pipeline.drawElements2(cube, 8, indies, 36, mode);
+
+			model = scale(5,5,5) * moveto(20, 0, 0);
+			colorShader->setModel(model);
+			colorShader->setCamera(view);
+			pipeline.useShader(colorShader);
+			pipeline.drawArray(&sphare[0], sphare.size(), mode);
 			/*
 			auto model = rotate(15,15,0);
 			shader->setModel(model);
@@ -199,11 +159,11 @@ int main(int argc, char * argv[])
 					float sense = 0.1f;
 					yaw += px*sense;
 					pitch += -py*sense;
-					if (pitch > 89) {
-						pitch = 89;
+					if (pitch > 89.99999) {
+						pitch = 89.99999;
 					}
-					if (pitch < -89) {
-						pitch = -89;
+					if (pitch < -89.99999) {
+						pitch = -89.99999;
 					}
 
 					lookDir.x = cos(radians(pitch)) * sin(radians(yaw));
@@ -234,7 +194,6 @@ int main(int argc, char * argv[])
 
 				}
 				view = lookat(campos, campos + lookDir, up);
-				shader->setCamera(view);
 				//do things			
 				//rendering
 			}

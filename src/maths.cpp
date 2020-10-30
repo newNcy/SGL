@@ -80,8 +80,8 @@ Mat4f rotate(float x, float y, float z)
 
 	Mat4f rz = 
 	{
-		{sin(x), cos(x), 0, 0},
 		{cos(x), -sin(x), 0, 0},
+		{sin(x), cos(x), 0, 0},
 		{0, 0, 1, 0},
 		{0, 0, 0, 1}
 	};
