@@ -3,14 +3,7 @@
 #include <memory>
 #include "FrameBuffer.h"
 #include "maths.h"
-
-struct Vertex
-{
-	Vec3f position;	//位置
-	Vec3f color;	//颜色
-	Vec2f uv;		//纹理坐标
-	Vec3f norm;		//法向量
-};
+#include "Shader.h"
 
 struct BoundingBox
 {
@@ -25,40 +18,7 @@ struct ScreenPoint
 	float depth = 0;
 };
 
-struct V2f 
-{
-	Vec4f position;
-	Vec3f color;	//颜色
-	Vec2f uv;		//纹理坐标
-	Vec3f norm;		//法向量
-};
-
 V2f lerp(const V2f & start, const V2f & end, float factor);
-
-struct Texture
-{
-	Texture(const char * path);
-	Vec4f sample(float u, float v);
-	~Texture();
-
-	int width = 0;
-	int height = 0;
-	int n = 0;
-	unsigned char * data = nullptr;
-};
-
-
-
-class SGLShader
-{	
-	public:
-		virtual void onVertex(const Vertex & vert, V2f & out) 
-		{ 
-		}
-		virtual void onFragment(const V2f & v2f, Vec4f & color) 
-		{ color = Vec4f(v2f.color,1); }
-		~SGLShader() {}
-};
 
 enum class DrawMode
 {
@@ -86,7 +46,7 @@ class SGLPineline
 		void drawArray(const Vertex * verties, size_t count, DrawMode drawMode);
 		
 		void drawTriangle(const V2f & a, const V2f & b, const V2f & c);
-		void drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
+		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 
 	private:
 		void draw(const std::vector<Vertex> & verts, DrawMode mode);

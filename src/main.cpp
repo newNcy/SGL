@@ -17,68 +17,20 @@ int main(int argc, char * argv[])
 	SGLPineline pipeline;
 	pipeline.makeFrameBuffer(800, 800);
 
-	auto cube = genCube();
-	class NormalShader : public SGLShader
-	{
-		const float pi = 3.1415926;
-		protected:
-			Mat4f model, view, projection;
-		public:
-			void setModel(const Mat4f & m) 
-			{
-				model = m;
-			}
-
-			void setCamera(const Mat4f & c)
-			{
-				view = c;
-			}
-
-			NormalShader()
-			{
-				//print(view);
-				projection = perspective(90, 1.f, .1f, 1000);
-			}
-
-			void onVertex(const Vertex & vert, V2f & out) override
-			{
-				out.position = Vec4f(vert.position,1) * model * view * projection;
-			}
-	};
-	class TextureShader : public NormalShader
-	{
-		protected:
-			std::shared_ptr<Texture> texture;
-		public:
-			TextureShader()
-			{
-				texture.reset(new Texture("../resource/image/container.jpg"));
-			}
-
-			void onVertex(const Vertex & vert, V2f & out) override
-			{
-				out.position = Vec4f(vert.position,1) * model * view * projection;
-			}
-
-			void onFragment(const V2f & v, Vec4f & color) override
-			{
-				color = texture->sample(v.uv.u, v.uv.v);
-			}
-	};
-	auto shader = std::make_shared<TextureShader>();
+	auto textureShader = std::make_shared<TextureShader>();
 	auto colorShader = std::make_shared<NormalShader>();
 
-	pipeline.useShader(shader);
-
+	auto cube = genCube();
 	auto sphare = genSphare(1.f);
+	auto ground = genGround(20, 20);
+
 	//第一个
-	Vec3f campos(0, 0, -30);
+	Vec3f campos(10, 5, 0);
 	Vec3f up(0, 1, 0);
 	Vec3f lookDir(0, 0, 1);
 	float yaw = 0.f, pitch = 0.f;
 	auto view = lookat(campos, campos + lookDir, up);
 
-	shader->setCamera(view);
 
 	bool quit = false;
 	auto mode = DrawMode::SGL_TRIANGLE;
@@ -93,10 +45,7 @@ int main(int argc, char * argv[])
 	long useTime = 0;
 	float fps = 0.f;
 
-	pipeline.clearColor(.5f, .5f, .5f);
-	pipeline.clearDepth(1.f);
 	auto lastTime = std::chrono::system_clock::now();
-	sgl.swapBuffer(pipeline.getCurrentFrameBuffer());
 	float ang = 0;
 	while (!quit) {
 		PROFILE(frame);
@@ -105,44 +54,31 @@ int main(int argc, char * argv[])
 			pipeline.clearColor(.5f, .5f, .5f);
 			pipeline.clearDepth(1.f);
 			ang += 5;
-			auto model = scale(5,5,5) * rotate(ang, ang, ang);
-			shader->setModel(model);
-			shader->setCamera(view);
-			pipeline.useShader(shader);
+
+			pipeline.useShader(textureShader);
+
+			Mat4f model;
+			textureShader->setCamera(view);
+
+			//绘制盒子
+			model = moveto(5, 1, 5);
+			textureShader->setModel(model);
 			pipeline.drawArray(&cube[0], 36, mode);	
 
-
-			model = scale(5,5,5) * moveto(20, 0, 0);
-			colorShader->setModel(model);
-			colorShader->setCamera(view);
+			//绘制地板
 			pipeline.useShader(colorShader);
+			colorShader->setCamera(view);
+			
+			model = Mat4f();
+			colorShader->setModel(model);
+			pipeline.drawArray(&ground[0], 6, mode);
+
+			
+			//绘制球体
+			model = moveto(10,1, 5);
+			colorShader->setModel(model);
 			pipeline.drawArray(&sphare[0], sphare.size(), mode);
-			/*
-			auto model = rotate(15,15,0);
-			shader->setModel(model);
-			pipeline.drawElements(cube, 8, indies, 36, mode);
-
-			//第二个
-			model = rotate(-15,-15,0) * moveto(3, 0, 0) ;
-			shader->setModel(model);
-			pipeline.drawElements(cube, 8, indies, 36, mode);
-
-			//第三个
-			model = rotate(-15,-15,0) * moveto(0, 3, 0) ;
-			shader->setModel(model);
-			pipeline.drawElements(cube, 8, indies, 36, mode);
-
-			model = rotate(-15,-15,0) * moveto(0, -3, 0) ;
-			shader->setModel(model);
-			pipeline.drawElements(cube, 8, indies, 36, mode);
-			*/
 		}
-
-		/*
-		model = scale(5, 5, 5) ;
-		shader->setModel(model);
-		pipeline.drawElements(cube, 8, indies, 36, mode);
-		*/
 
 		SDL_Event event;
 
@@ -198,6 +134,7 @@ int main(int argc, char * argv[])
 				//rendering
 			}
 		}
+
 		sgl.swapBuffer(pipeline.getCurrentFrameBuffer());
 		frameCount ++;
 		auto current = std::chrono::system_clock::now();

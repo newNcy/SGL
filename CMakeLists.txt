@@ -18,6 +18,7 @@ add_library(sgl_debug STATIC src/debug.cpp)
 add_library(sgl_math STATIC src/maths.cpp)
 
 add_library(sgl STATIC 
+	src/Shader.cpp
 	src/FrameBuffer.cpp
 	src/Pipeline.cpp
 	src/SGL.cpp

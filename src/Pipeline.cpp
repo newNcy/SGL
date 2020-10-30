@@ -1,6 +1,4 @@
 #include "Pipeline.h"
-#define STB_IMAGE_IMPLEMENTATION 
-#include "stb_image.h"
 #include "debug.h"
 
 void SGLPineline::makeFrameBuffer(int width, int height)
@@ -288,10 +286,26 @@ void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
 	}
 }
 
+
+bool inside(const V2f & v)
+{
+	auto & p = v.position;
+	return p.x > -p.w && p.x < p.w && p.y > -p.w && p.y < p.w && p.z > -p.w && p.z < p.w;
+}
+
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
 	if (out.size() < 2) {
-		return out;
+		return std::move(out);
+	}
+
+	bool allInside = true;
+	for (int i = 0; i < count; ++ i) {
+		allInside &= inside(out[i]);
+	}
+
+	if (allInside) {
+		return std::move(out);
 	}
 
 	const std::vector<Vec4f> planes = 
@@ -307,37 +321,46 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 	std::vector<V2f> in;
 	int idx = 0;
 	for (auto & plane : planes) {
+		if (!out.size()) { //剔光了
+			break;
+		}
 		std::swap(in, out);
 		out.clear();
-		for (int i = 0, j = 1; i < in.size(); ++ i, ++ j) {
-			if (j == in.size()) {
-				j = 0;
+		float pred = in[0].position * plane;
+		int pre = 0;
+		for (int i = 1; ; ++ i) {
+			if (i == in.size()) {
+				i = 0;
 			}
 			float di = in[i].position * plane;
-			float dj = in[j].position * plane;
-			int code = (dj >= 0.001) | ((di>= 0.001)<<1);
+			int code = (di >= 0.001) | ((pred >= 0.001)<<1);
 			switch(code) {
 				case 0: //都不在
 					break;
 				case 1: //i不在 j在
 					{
-						V2f clip = lerp(in[i], in[j], di/(di-dj));
+						V2f clip = lerp(in[pre], in[i], pred/(pred-di));
 						out.push_back(clip);
-						out.push_back(in[j]);
+						out.push_back(in[i]);
 					}
 					break;
 				case 2: //i在j不在
 					{
-						V2f clip = lerp(in[i], in[j], di/(di-dj));
+						V2f clip = lerp(in[pre], in[i], pred/(pred-di));
 						out.push_back(clip);
 					}
 					break;
 				case 3:
 					{
-						out.push_back(in[j]);
+						out.push_back(in[i]);
 					}
 					break;
 			}
+			if (!i) {
+				break;
+			}
+			pre = i;
+			pred = di;
 		}
 	}
 	return out;
@@ -361,7 +384,6 @@ void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
 		points.push_back(out);
 
 		if (points.size() == 3) {
-			PROFILE(triangle);
 			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
 			if (clips.size()) {
 
@@ -375,7 +397,7 @@ void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
 		}
 	}
 }
-void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
 {
 	if (!verties || !indices || !currentFrame || !shader) return;
 
@@ -406,25 +428,3 @@ void SGLPineline::drawElements2(const Vertex * verties, size_t count, unsigned i
 
 }
 
-Texture::Texture(const char * path)
-{
-	data = stbi_load(path, &width, &height, &n, 0);
-}
-
-Vec4f Texture::sample(float u, float v)
-{
-	int x = u*(width-1);
-	int y = (1-v)*(height-1);
-	if (x < 0) x = 0;
-	if (y < 0) y = 0;
-	if (x >= width) x = width -1;
-	if (y >= height) y = height-1;
-	unsigned char * p = data + y*n*width + x*n;
-	Vec4f ret(p[0]/255.f, p[1]/255.f,p[2]/255.f, 1.f);
-	return ret;
-}
-
-Texture::~Texture()
-{
-	stbi_image_free(data);
-}

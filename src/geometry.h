@@ -81,7 +81,7 @@ std::vector<Vertex> genSphare(float radius)
 
 			Vertex v;
 			v.position = Vec3f(xPos, yPos, zPos);
-			v.color = Vec3f((xPos+1.0)*0.5f, (yPos+1.0)*0.5f, (zPos+1.0)*0.5f);
+			v.color = Vec3f(0.6f, 0.6f, 0.6f);//Vec3f((xPos+1.0)*0.5f, (yPos+1.0)*0.5f, (zPos+1.0)*0.5f);
 			int last = points.size() -1;
 			points.push_back(v);
 		}
@@ -108,5 +108,19 @@ std::vector<Vertex> genSphare(float radius)
 		}
 	}
 	return ret;
+}
+
+std::vector<Vertex> genGround(int width, int height)
+{
+	return 
+	{
+		{{0, 0, 0},{0.3f, 0.3f, 0.3f}, {0,0}, {}},
+		{{0, 0, height}, {0.3f, 0.3f, 0.3f}, {0,1},{}},
+		{{width, 0, height}, {0.3f, 0.3f, 0.3f}, {1,1},{}},
+
+		{{0, 0, 0}, {0.3f, 0.3f, 0.3f}, {0,0}, {}},
+		{{width, 0, 0}, {0.3f, 0.3f, 0.3f}, {1,0},{}},
+		{{width, 0, height}, {0.3f, 0.3f, 0.3f}, {1,1},{}},
+	};
 }
 
