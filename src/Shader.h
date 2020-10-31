@@ -1,6 +1,7 @@
 #pragma once 
 #include "maths.h"
 #include <memory>
+#include "debug.h"
 
 struct Vertex
 {
@@ -60,11 +61,12 @@ class NormalShader : public SGLShader
 	NormalShader()
 	{
 		//print(view);
-		projection = perspective(90, 1.f, .1f, 1000);
+		projection = perspective(90, 1.f, 0.1f, 1000);
 	}
 
 	void onVertex(const Vertex & vert, V2f & out) override
 	{
+		PROFILE(vertex_shader);
 		out.position = Vec4f(vert.position,1) * model * view * projection;
 	}
 };
@@ -81,6 +83,7 @@ class TextureShader : public NormalShader
 
 		void onFragment(const V2f & v, Vec4f & color) override
 		{
+			PROFILE(fragment_shader);
 			color = texture->sample(v.uv.u, v.uv.v);
 		}
 };

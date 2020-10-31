@@ -49,3 +49,17 @@ B = -2nf/(f-n)
 ## 齐次裁剪 
 >向量点乘 P(1,0,0,1) = 0时表示 x + w = 0也是就 x = -w ,式子大于0表示x > -w 也就是超出裁剪面了，
 >然后使用SutherlandHodgemand算法对每条边生成交点，具体四种情况，写代码里了
+## 透视纹理纠正
+使用重心坐标和扫描线两端距离直接对纹理坐标进行插值得到的纹理坐标都是不对的
+因为这两个都是屏幕坐标来计算的，所以它们的线性关系跟真实世界的线性关系不等。
+但是除以各自的w之后，就是成线性关系的了
+
+公式推导 http://www.cs.ucr.edu/~craigs/courses/2019-fall-cs-130/lectures/perspective-correct-interpolation.pdf
+
+代码实现
+float k = w1/a.position.w + w2/b.position.w + w3/c.position.w;
+w1 = w1/a.position.w/k;
+w2 = w2/b.position.w/k;
+w3 = w3/c.position.w/k;
+f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
+其中w1 w2 w3是计算出来重心坐标

@@ -18,17 +18,13 @@ struct ProfileEntry
 struct Profiler
 {
 	static int tab;
-	static bool clear;
-	static Profiler * lastNode;
-	std::chrono::system_clock::time_point start;
-	const char * tag = nullptr;
-
+	static Profiler * firstNode;
 	static std::vector<ProfileEntry> hits;
-
 	static void setupProfile(const char * name)
 	{
 		for (auto & entry : hits) {
 			if (entry.tag == name) {
+				entry.count ++;
 				return;
 			}
 		}
@@ -37,7 +33,7 @@ struct Profiler
 		{
 			name,
 			tab,
-			0,
+			1,
 			0
 		};
 		hits.push_back(entry);
@@ -47,7 +43,6 @@ struct Profiler
 	{
 		for (auto & entry : hits) {
 			if (entry.tag == name) {
-				entry.count ++;
 				entry.micros += ms;
 				return;
 			}
@@ -66,7 +61,7 @@ struct Profiler
 			while (t--) {
 				putchar(' ');
 			}
-			printf("%s hits:%d avg:%.2lfms total:%ldms\n", 
+			printf("[%s] hits:%d avg:%.2lfms total:%ldms\n", 
 					item.tag.c_str(),
 					item.count,
 					double(item.micros/1000000)/item.count,
@@ -75,8 +70,14 @@ struct Profiler
 		fflush(stdout);
 		hits.clear();
 	}
+
+	std::chrono::system_clock::time_point start;
+	const char * tag = nullptr;
 	Profiler(const char * tag):tag(tag) 
 	{
+		if (!firstNode) {
+			firstNode = this;
+		}
 		start = std::chrono::system_clock::now();
 		setupProfile(tag);
 		tab ++;
@@ -88,6 +89,9 @@ struct Profiler
 		auto end = std::chrono::system_clock::now();
 		auto use = end - start;
 		hitProfile(tag, use.count());
+		if (this == firstNode) {
+			show();
+		}
 	}
 };
 #define PROFILE(X) Profiler X##the__profiler(#X);

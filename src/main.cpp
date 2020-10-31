@@ -47,109 +47,113 @@ int main(int argc, char * argv[])
 
 	auto lastTime = std::chrono::system_clock::now();
 	float ang = 0;
+	float lastfps = 0;
 	while (!quit) {
-		PROFILE(frame);
 		{
-			PROFILE(rendering);
-			pipeline.clearColor(.5f, .5f, .5f);
-			pipeline.clearDepth(1.f);
-			ang += 5;
+			PROFILE(frame);
+			{
+				PROFILE(rendering);
+				pipeline.clearColor(.5f, .5f, .5f);
+				pipeline.clearDepth(1.f);
+				ang += 5;
 
-			pipeline.useShader(textureShader);
+				pipeline.useShader(textureShader);
 
-			Mat4f model;
-			textureShader->setCamera(view);
+				Mat4f model;
+				textureShader->setCamera(view);
 
-			//绘制盒子
-			model = moveto(5, 1, 5);
-			textureShader->setModel(model);
-			pipeline.drawArray(&cube[0], 36, mode);	
+				//绘制盒子
+				model = moveto(5, 2, 5);
+				textureShader->setModel(model);
+				pipeline.drawArray(&cube[0], 36, mode);	
 
-			//绘制地板
-			pipeline.useShader(colorShader);
-			colorShader->setCamera(view);
-			
-			model = Mat4f();
-			colorShader->setModel(model);
-			pipeline.drawArray(&ground[0], 6, mode);
+				//绘制地板
+				pipeline.useShader(colorShader);
+				colorShader->setCamera(view);
 
-			
-			/*
-			//绘制球体
-			model = moveto(10,1, 5);
-			colorShader->setModel(model);
-			pipeline.drawArray(&sphare[0], sphare.size(), mode);
-			*/
-		}
+				model = Mat4f();
+				colorShader->setModel(model);
+				pipeline.drawArray(&ground[0], 6, mode);
 
-		SDL_Event event;
 
-		{
-			PROFILE(event_handle);
-			while (SDL_PollEvent(&event)) {
-				//handle events
-				if (event.type == SDL_QUIT) {
-					quit = true;
-				}else if (event.type == SDL_MOUSEMOTION) {
-					float px = event.motion.xrel;
-					float py = event.motion.yrel;
-					//printf("x:%f y:%f\n", px, py);
-					float sense = 0.1f;
-					yaw += px*sense;
-					pitch += -py*sense;
-					if (pitch > 89.99999) {
-						pitch = 89.99999;
-					}
-					if (pitch < -89.99999) {
-						pitch = -89.99999;
-					}
-
-					lookDir.x = cos(radians(pitch)) * sin(radians(yaw));
-					lookDir.y = sin(radians(pitch));
-					lookDir.z = cos(radians(pitch)) * cos(radians(yaw));
-
-					lookDir = normalize(lookDir);
-					//fflush(stdout);
-				}else if (event.type == SDL_KEYDOWN) {
-					char key = event.key.keysym.sym;
-					float moveSpeed = 1;
-					switch (key) {
-						case 'a':
-							campos = campos + normalize(cross(lookDir, up))*moveSpeed;
-							break;
-						case 's':
-							campos = campos - lookDir * moveSpeed;
-							break;
-						case 'w':
-							campos = campos + lookDir * moveSpeed;
-							break;
-						case 'd':
-							campos = campos + normalize(cross(up, lookDir));
-							break;
-					}
-					//printf("camera:");
-					//print(campos,3);
-
-				}
-				view = lookat(campos, campos + lookDir, up);
-				//do things			
-				//rendering
+				/*
+				//绘制球体
+				model = moveto(10,1, 5);
+				colorShader->setModel(model);
+				pipeline.drawArray(&sphare[0], sphare.size(), mode);
+				*/
 			}
-		}
 
-		sgl.swapBuffer(pipeline.getCurrentFrameBuffer());
-		frameCount ++;
-		auto current = std::chrono::system_clock::now();
-		auto use = current - lastTime;
-		lastTime = current;
-		long ms = use.count() / 1000000;
-		useTime += ms;
+			SDL_Event event;
+
+			{
+				PROFILE(event_handle);
+				while (SDL_PollEvent(&event)) {
+					//handle events
+					if (event.type == SDL_QUIT) {
+						quit = true;
+					}else if (event.type == SDL_MOUSEMOTION) {
+						float px = event.motion.xrel;
+						float py = event.motion.yrel;
+						//printf("x:%f y:%f\n", px, py);
+						float sense = 0.1f;
+						yaw += px*sense;
+						pitch += -py*sense;
+						if (pitch > 89.99999) {
+							pitch = 89.99999;
+						}
+						if (pitch < -89.99999) {
+							pitch = -89.99999;
+						}
+
+						lookDir.x = cos(radians(pitch)) * sin(radians(yaw));
+						lookDir.y = sin(radians(pitch));
+						lookDir.z = cos(radians(pitch)) * cos(radians(yaw));
+
+						lookDir = normalize(lookDir);
+						//fflush(stdout);
+					}else if (event.type == SDL_KEYDOWN) {
+						char key = event.key.keysym.sym;
+						float moveSpeed = 1;
+						switch (key) {
+							case 'a':
+								campos = campos + normalize(cross(lookDir, up))*moveSpeed;
+								break;
+							case 's':
+								campos = campos - lookDir * moveSpeed;
+								break;
+							case 'w':
+								campos = campos + lookDir * moveSpeed;
+								break;
+							case 'd':
+								campos = campos + normalize(cross(up, lookDir));
+								break;
+						}
+						//printf("camera:");
+						//print(campos,3);
+
+					}
+					view = lookat(campos, campos + lookDir, up);
+					//do things			
+					//rendering
+				}
+			}
+
+			sgl.swapBuffer(pipeline.getCurrentFrameBuffer());
+			frameCount ++;
+			auto current = std::chrono::system_clock::now();
+			auto use = current - lastTime;
+			lastTime = current;
+			long ms = use.count() / 1000000;
+			useTime += ms;
+		}
 		if (useTime >= 1000) {
-			printf("%3.1f fps\n", frameCount/(useTime*0.001));
+			lastfps = frameCount/(useTime*0.001);
 			useTime = 0;
 			frameCount = 0;
 		}
-		Profiler::show();
+		printf("%3.1f fps\n", lastfps);
+		fflush(stdout);
 	}
 
 	sgl.destroy();

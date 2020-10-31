@@ -1,7 +1,6 @@
 #include "debug.h"
 int Profiler::tab = 0;
-bool Profiler::clear = false;
-Profiler * Profiler::lastNode = nullptr;
+Profiler * Profiler::firstNode= nullptr;
 std::vector<ProfileEntry> Profiler::hits;
 
 void print(const Mat4f & m, char end)

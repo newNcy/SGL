@@ -268,8 +268,12 @@ void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
 			float depth = clipA.z*w1+ clipB.z*w2 + clipC.z*w3;
 			V2f f;
 			f.position = a.position*w1 + b.position*w2 + c.position*w3;
-			f.uv = a.uv/a.position.w*w1 + b.uv/b.position.w*w2 + c.uv/c.position.w*w3;
-			f.uv = f.uv*f.position.w;
+			
+			float k = w1/a.position.w + w2/b.position.w + w3/c.position.w;
+			w1 = w1/a.position.w/k;
+			w2 = w2/b.position.w/k;
+			w3 = w3/c.position.w/k;
+			f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
 			f.norm = a.norm*w1 + b.norm*w2 + c.norm*w3;
 			f.color = a.color*w1+ b.color*w2+ c.color*w3;
 
