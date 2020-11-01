@@ -6,8 +6,9 @@ void ModelShader::onFragment(const V2f & v, Vec4f & color)
 	PROFILE(fragment_shader);
 	float ambientFactor = 0.1f;
 	//环境光
+	Vec4f ambientColor;
 	if (material->ambientMap) {
-		color = material->ambientMap->sample(v.uv.u, v.uv.v);
+		ambientColor = material->ambientMap->sample(v.uv.u, v.uv.v);
 	}
 	//散射
 	Vec3f diffuseColor;
@@ -18,6 +19,6 @@ void ModelShader::onFragment(const V2f & v, Vec4f & color)
 		diffuseColor = diffuseColor + dlight.second.color * diff;
 	}
 
-	color = material->diffuseMap->sample(v.uv.u, v.uv.v) * diffuseColor;
+	color = ambientColor + material->diffuseMap->sample(v.uv.u, v.uv.v) * diffuseColor;
 	color.a = 1;
 }

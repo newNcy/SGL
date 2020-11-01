@@ -55,9 +55,9 @@ int main(int argc, char * argv[])
 
 	pipeline.useShader(modelShader);
 	//增加阳光
-	modelShader->parallelLights["light"] = 
+	modelShader->parallelLights["sun"] = 
 	{
-		{0, 0, 1},
+		{-2, 0, 1},
 		{1.f, 1.f, 1.f}
 	};
 	
