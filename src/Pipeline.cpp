@@ -276,6 +276,7 @@ void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
 			f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
 			f.norm = a.norm*w1 + b.norm*w2 + c.norm*w3;
 			f.color = a.color*w1+ b.color*w2+ c.color*w3;
+			f.worldPosition = a.worldPosition*w1+ b.worldPosition*w2+ c.worldPosition*w3;
 
 			Vec4f color;
 			shader->onFragment(f, color);
@@ -332,13 +333,13 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 		}
 		std::swap(in, out);
 		out.clear();
-		float pred = in[0].position * plane;
+		float pred = dot(in[0].position, plane);
 		int pre = 0;
 		for (int i = 1; ; ++ i) {
 			if (i == in.size()) {
 				i = 0;
 			}
-			float di = in[i].position * plane;
+			float di = dot(in[i].position, plane);
 			int code = (di >= 0.001) | ((pred >= 0.001)<<1);
 			switch(code) {
 				case 0: //都不在

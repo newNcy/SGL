@@ -72,16 +72,16 @@ Mat4f rotate(float x, float y, float z)
 
 	Mat4f ry = 
 	{
-		{cos(x), 0, -sin(x), 0},
+		{cos(y), 0, -sin(y), 0},
 		{0, 1, 0, 0},
-		{sin(x), 0, cos(x), 0},
+		{sin(y), 0, cos(y), 0},
 		{0, 0, 0, 1}
 	};
 
 	Mat4f rz = 
 	{
-		{cos(x), -sin(x), 0, 0},
-		{sin(x), cos(x), 0, 0},
+		{cos(z), -sin(z), 0, 0},
+		{sin(z), cos(z), 0, 0},
 		{0, 0, 1, 0},
 		{0, 0, 0, 1}
 	};

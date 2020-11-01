@@ -1,35 +1,23 @@
 #include "Shader.h"
-#define STB_IMAGE_IMPLEMENTATION 
-#include "stb_image.h"
 
-Texture::Texture(const char * path)
-{
-	data = stbi_load(path, &width, &height, &n, 0);
-}
 
-Vec4f Texture::sample(float u, float v)
+void ModelShader::onFragment(const V2f & v, Vec4f & color)
 {
-	int x = u*(width-1);
-	int y = (1-v)*(height-1);
-	if (x < 0) {
-		x = 0;
-		return Vec4f(0,0,0,0);
+	PROFILE(fragment_shader);
+	float ambientFactor = 0.1f;
+	//环境光
+	if (material->ambientMap) {
+		color = material->ambientMap->sample(v.uv.u, v.uv.v);
 	}
-	if (y < 0) {
-		return Vec4f(0,0,0,0);
+	//散射
+	Vec3f diffuseColor;
+	for (auto & dlight : parallelLights) {
+		auto dir = normalize(dlight.second.direct*-1);
+		auto norm = normalize(v.norm);
+		float diff = std::max(dot(dir, norm), 0.f);
+		diffuseColor = diffuseColor + dlight.second.color * diff;
 	}
-	if (x >= width) {
-		x = width -1;
-		return Vec4f(0,0,0,0);
-	}
-	//return Vec4f(u, v, 0, 0);
-	if (y >= height) y = height-1;
-	unsigned char * p = data + y*n*width + x*n;
-	Vec4f ret(p[0]/255.f, p[1]/255.f,p[2]/255.f, 1.f);
-	return ret;
-}
 
-Texture::~Texture()
-{
-	stbi_image_free(data);
+	color = material->diffuseMap->sample(v.uv.u, v.uv.v) * diffuseColor;
+	color.a = 1;
 }

@@ -15,6 +15,7 @@ include_directories(
 
 
 add_library(sgl_debug STATIC src/debug.cpp)
+add_library(sgl_model STATIC src/ModelLoader.cpp src/Model.cpp)
 add_library(sgl_math STATIC src/maths.cpp)
 
 add_library(sgl STATIC 
@@ -32,7 +33,7 @@ endif (COMMAND cmake_policy)
 add_definitions("-g -static-libstdc++")
 
 add_executable(app src/main.cpp)
-target_link_libraries(app sgl sgl_debug sgl_math mingw32 SDL2main SDL2-static)
+target_link_libraries(app sgl sgl_debug sgl_math mingw32 SDL2main SDL2-static sgl_model)
 
 
 #tests

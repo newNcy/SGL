@@ -42,6 +42,7 @@ struct Vec3
 	Type operator + (const Type & rhs) const { return Type(x+rhs.x, y+rhs.y, z+rhs.z); }
 	Type operator - (const Type & rhs) const { return Type(x-rhs.x, y-rhs.y, z-rhs.z); }
 	Type operator * (float f) const { return Type(x*f, y*f, z*f); }
+	Type operator * (const Type & rhs) const { return Type(x*rhs.x, y*rhs.y, z*rhs.z); }
 	Type operator / (float f) const { return Type(x/f, y/f, z/f); }
 	T & operator [] (unsigned int index) { assert(index < 3); return data[index];}
 	const T & operator [] (unsigned int index) const { assert(index < 3); return data[index];}
@@ -64,9 +65,10 @@ struct Vec4
 	Type operator + (const Type & rhs) const { return Type(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w); }
 	Type operator - (const Type & rhs) const { return Type(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w); }
 	Type operator * (float f) const { return Type(x*f, y*f, z*f, w*f); }
+	Type operator * (const Type & rhs) const { return Type(x*rhs.x, y*rhs.y, z*rhs.z, w*rhs.w); }
 	Type operator / (float f) const { return Type(x/f, y/f, z/f, w/f); }
 	T & operator [] (unsigned int index) { assert(index < 4); return data[index];}
-	T operator * (const Type & rhs) const { return x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w; }
+	//T operator * (const Type & rhs) const { return x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w; }
 	const T & operator [] (unsigned int index) const { assert(index < 4); return data[index];}
 };
 
@@ -92,6 +94,18 @@ template <typename T>
 T lerp(const T & start, const T & end, float factor)
 {
 	return start*(1.f-factor) + end*factor;
+}
+
+template <typename T>
+T dot(const Vec3<T> & lhs, const Vec3<T> & rhs)
+{
+	return lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z;
+}
+
+template <typename T>
+T dot(const Vec4<T> & lhs, const Vec4<T> & rhs)
+{
+	return lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z + lhs.w*rhs.w;
 }
 
 template <typename T>
