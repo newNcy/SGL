@@ -13,7 +13,7 @@ void ModelShader::onFragment(const V2f & v, Vec4f & color)
 	//散射
 	Vec3f diffuseColor;
 	for (auto & dlight : parallelLights) {
-		auto dir = normalize(dlight.second.direct);
+		auto dir = normalize(dlight.second.direct*-1);
 		auto norm = normalize(v.norm);
 		float diff = std::max(dot(dir, norm), 0.f);
 		diffuseColor = diffuseColor + dlight.second.color * diff;

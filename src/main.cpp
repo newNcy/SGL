@@ -58,7 +58,13 @@ int main(int argc, char * argv[])
 	//增加阳光
 	modelShader->parallelLights["sun"] = 
 	{
-		{0, 0, -1},
+		{1, 0, 1},
+		{1.f, 1.f, 1.f}
+	};
+	
+	modelShader->parallelLights["moon"] = 
+	{
+		{0, 1, -1},
 		{1.f, 1.f, 1.f}
 	};
 	
@@ -70,7 +76,8 @@ int main(int argc, char * argv[])
 				pipeline.clearColor(.5f, .5f, .5f);
 				pipeline.clearDepth(1.f);
 
-				auto model = rotate(0, 150, 0);
+				ang += 4;
+				auto model = rotate(0, ang , 0);
 				modelShader->setModel(model);
 				modelShader->setCamera(view);
 
