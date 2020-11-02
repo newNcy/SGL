@@ -30,7 +30,7 @@ if (COMMAND cmake_policy)
 endif (COMMAND cmake_policy)
 
 
-add_definitions("-g -static-libstdc++")
+add_definitions("-g -O3 -flto -ffast-math -static-libstdc++")
 
 add_executable(app src/main.cpp)
 target_link_libraries(app sgl sgl_debug sgl_math mingw32 SDL2main SDL2-static sgl_model)

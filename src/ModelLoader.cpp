@@ -178,7 +178,7 @@ std::shared_ptr<Model> OBJLoader::load(const char * path)
 				}
 				mesh->verties.push_back(v);
 			}
-		} else if (type == "o") {
+		} else if (type == "o" || type == "g") {
 			mesh = std::make_shared<Mesh>();
 			file>>mesh->name;
 			model->meshs.push_back(mesh);

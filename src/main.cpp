@@ -28,6 +28,7 @@ int main(int argc, char * argv[])
 	
 	auto loader = std::make_shared<OBJLoader>();
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
+	//auto nanosuit = loader->load("../resource/model/file.obj");
 
 	int dis = (nanosuit->boundingBox.max.y - nanosuit->boundingBox.min.y)/2;
 	//第一个
@@ -57,7 +58,7 @@ int main(int argc, char * argv[])
 	//增加阳光
 	modelShader->parallelLights["sun"] = 
 	{
-		{-2, 0, 1},
+		{0, 0, -1},
 		{1.f, 1.f, 1.f}
 	};
 	
