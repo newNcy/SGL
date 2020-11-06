@@ -15,6 +15,7 @@ Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 		Vec4f(front, 0),
 		Vec4f(0, 0, 0, 1)
 	};
+	//在还是正交阵的时候转置取逆
 	for (int i = 0 ; i < 4; ++i ){
 		for (int j = i+1 ; j < 4; ++j ){
 			std::swap(view[i][j], view[j][i]);

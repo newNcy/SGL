@@ -65,7 +65,7 @@ int main(int argc, char * argv[])
 	modelShader->parallelLights["moon"] = 
 	{
 		{0, 1, -1},
-		{1.f, 1.f, 1.f}
+		{1.f, 0.f, 1.f}
 	};
 	
 	while (!quit) {
@@ -82,6 +82,7 @@ int main(int argc, char * argv[])
 				modelShader->setCamera(view);
 
 				for (auto & mesh : nanosuit->meshs) {
+					Profiler _(mesh->name.c_str());
 					modelShader->setMaterial(mesh->material);
 					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), mode);	
 				}

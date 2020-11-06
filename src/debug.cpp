@@ -5,6 +5,7 @@ std::vector<ProfileEntry> Profiler::hits;
 
 void print(const Mat4f & m, char end)
 {
+	printf("called\n");
 	printf("{\n");
 	for (int i = 0 ; i < 4; ++ i) {
 		printf("\t");

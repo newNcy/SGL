@@ -8,6 +8,7 @@ template <typename T>
 struct Vec2
 {
 	using Type = Vec2<T>;
+	using Etype = T;
 	union 
 	{
 		struct { T x,y; };
@@ -30,6 +31,7 @@ template <typename T>
 struct Vec3
 {
 	using Type = Vec3<T>;
+	using Etype = T;
 	union 
 	{
 		struct { T x,y,z; };
@@ -52,6 +54,7 @@ template <typename T>
 struct Vec4
 {
 	using Type = Vec4<T>;
+	using Etype = T;
 	union 
 	{
 		struct { T x,y,z,w; };
@@ -77,6 +80,7 @@ struct Mat4
 {
 	using Vec4 = Vec4<T>;
 	using Type = Mat4<T>;
+	using Etype = T;
 	Vec4 data[4];
 
 	Mat4() {data[0][0] = 1; data[1][1] = 1; data[2][2] = 1; data[3][3] = 1;}
@@ -172,5 +176,42 @@ Mat4f perspective(float fov, float aspect, float n, float f);
 Mat4f moveto(float x, float y, float z);
 Mat4f rotate(float x, float y, float z);
 Mat4f scale(float x, float y, float z);
+
+template <typename T>
+T transpose(const T & t, int d)
+{
+	T ret;
+	for (int i = 0; i < d; ++ i) {
+		for (int j = 0; j < d; ++ j) {
+			ret[i][j] = t[j][i];
+		}
+	}
+	return ret;
+}
+
+template <typename T>
+T inverse(const T & m, int d)
+{
+	printf("%s\n", __PRETTY_FUNCTION__);
+	typename T::Etype det = 0;
+	for (int i = 0 ; i < d; ++ i) {
+		typename T::Etype add = m[0][i];
+		typename T::Etype sub = m[0][i];
+		for (int j = 1 ; j < d; ++ j) {
+			int r1 = (i+j)%d;
+			int r2 = (i-j+d)%d;
+			printf("add[%d][%d]:%fx%f\n", j, r1, add, m[j][r1]);
+			printf("sub[%d][%d]:%fx%f\n", j, r2, sub, m[j][r2]);
+			add *= m[j][r1];
+			sub *= m[j][r2];
+		}
+		printf("\n");
+		det += add - sub;
+	}
+	printf("det :%f\n", det);
+
+	float det2 = 0;
+	return m;
+}
 
 

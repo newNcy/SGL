@@ -48,4 +48,16 @@ int main ()
 	print(right, 3);
 	print(cup, 3);
 	print(front, 3);
+	printf("inverse test\n");
+
+	Mat4f t = 
+	{
+		{-4.f,-3.f,3.f,1.f},
+		{0.f, 2.f,-2.f, 0.f},
+		{1.f, 4.f, -1.f, 1.f},
+		{1.f, 3.f, 5.f, 1.f}
+	};
+	print(t);
+	auto i = inverse(t, 4);
+
 }
