@@ -20,6 +20,7 @@ struct Vec2
 
 	Type operator + (const Type & rhs) const { return Type(x+rhs.x, y+rhs.y); }
 	Type operator - (const Type & rhs) const { return Type(x-rhs.x, y-rhs.y); }
+	Type operator * (const Type & rhs) const { return Type(x*rhs.x, y*rhs.y); }
 	Type operator * (float f) const { return Type(x*f, y*f); }
 	Type operator / (float f) const { return Type(x/f, y/f); }
 	T & operator [] (unsigned int index) { assert(index < 2); return data[index];}
@@ -43,8 +44,8 @@ struct Vec3
 
 	Type operator + (const Type & rhs) const { return Type(x+rhs.x, y+rhs.y, z+rhs.z); }
 	Type operator - (const Type & rhs) const { return Type(x-rhs.x, y-rhs.y, z-rhs.z); }
-	Type operator * (float f) const { return Type(x*f, y*f, z*f); }
 	Type operator * (const Type & rhs) const { return Type(x*rhs.x, y*rhs.y, z*rhs.z); }
+	Type operator * (float f) const { return Type(x*f, y*f, z*f); }
 	Type operator / (float f) const { return Type(x/f, y/f, z/f); }
 	T & operator [] (unsigned int index) { assert(index < 3); return data[index];}
 	const T & operator [] (unsigned int index) const { assert(index < 3); return data[index];}
@@ -189,24 +190,40 @@ T transpose(const T & t, int d)
 	return ret;
 }
 
+
 template <typename T>
 T inverse(const T & m, int d)
 {
 	printf("%s\n", __PRETTY_FUNCTION__);
 	typename T::Etype det = 0;
-	for (int i = 0 ; i < d; ++ i) {
-		typename T::Etype add = m[0][i];
-		typename T::Etype sub = m[0][i];
-		for (int j = 1 ; j < d; ++ j) {
-			int r1 = (i+j)%d;
-			int r2 = (i-j+d)%d;
-			printf("add[%d][%d]:%fx%f\n", j, r1, add, m[j][r1]);
-			printf("sub[%d][%d]:%fx%f\n", j, r2, sub, m[j][r2]);
-			add *= m[j][r1];
-			sub *= m[j][r2];
+	/*
+	det += m[0][0]*( m[1][1]*m[2][2]*m[3][3] + m[1][2]*m[2][3]*m[3][1] + m[1][3]*m[2][1]*m[3][2] -m[1][1]*m[2][3]*m[3][2]-m[1][2]*m[2][1]*m[3][3] - m[1][3]*m[2][2]*m[3][1]);
+	det -= m[0][1]*( m[1][0]*m[2][2]*m[3][3] + m[1][2]*m[2][3]*m[3][0] + m[1][3]*m[2][0]*m[3][2] -m[1][0]*m[2][3]*m[3][2]-m[1][2]*m[2][2]*m[3][0] - m[1][3]*m[2][0]*m[3][3]);
+	det += m[0][2]*( m[1][0]*m[2][1]*m[3][3] + m[1][1]*m[2][3]*m[3][0] + m[1][3]*m[2][0]*m[3][1] -m[1][0]*m[2][3]*m[3][1]-m[1][1]*m[2][0]*m[3][3] - m[1][3]*m[2][1]*m[3][0]);
+	det -= m[0][3]*( m[1][0]*m[2][1]*m[3][2] + m[1][1]*m[2][2]*m[3][0] + m[1][2]*m[2][0]*m[3][1] -m[1][0]*m[2][2]*m[3][1]-m[1][1]*m[2][0]*m[3][2] - m[1][2]*m[2][1]*m[3][0]);
+	*/
+	int s = 1;
+	for (int i = 0; i < d; ++i) {
+		//求代数余子式
+		typename T::Etype c1i = 0;
+		for (int c = 1; c < d; ++ c) {
+			typename T::Etype add = 1;
+			typename T::Etype sub = 1;
+			for (int r = 1; r < d; ++ r) {
+				int ca = (c+r-1 + i)%d;
+				int cs = (c-r-i+d)%d;
+				if (ca == i) ++ ca;
+				if (cs == i) cs = (cs-1+d)%d;
+				printf("+ %d:%d - %d:%d ",r, ca, r, cs);
+				//add *= m[r][ca];
+				//sub *= m[r][cs];
+			}
+			c1i += add - sub; 
+			printf("\n");
 		}
 		printf("\n");
-		det += add - sub;
+		det += s * m[0][i] * c1i;
+		s = -1;
 	}
 	printf("det :%f\n", det);
 
