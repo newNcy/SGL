@@ -26,6 +26,12 @@ enum class DrawMode
 	SGL_TRIANGLE,
 };
 
+enum class BackFaceCullingMode
+{
+	DISABLE,
+	CLOCKWISE,
+	COUTER_CLOCKWISE
+};
 
 class SGLPineline
 {
@@ -48,7 +54,9 @@ class SGLPineline
 		void drawTriangle(const V2f & a, const V2f & b, const V2f & c);
 		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 
+		BackFaceCullingMode backFaceCulling = BackFaceCullingMode::CLOCKWISE;
 	private:
+		bool backCulling(const std::vector<V2f> & points);
 		void draw(const std::vector<Vertex> & verts, DrawMode mode);
 		int xy2idx(int x, int y) const;
 		bool needClip(const Vec3f & pos);

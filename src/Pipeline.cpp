@@ -299,6 +299,7 @@ bool inside(const V2f & v)
 	return p.x > -p.w && p.x < p.w && p.y > -p.w && p.y < p.w && p.z > -p.w && p.z < p.w;
 }
 
+//齐次裁剪
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
 	PROFILE(SutherlandHodgeman)
@@ -373,6 +374,24 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 	return out;
 }
 
+bool SGLPineline::backCulling(const std::vector<V2f> & points)
+{
+	if (backFaceCulling == BackFaceCullingMode::DISABLE) {
+		return false;
+	}
+	Vec3f norm;
+	Vec3f a(points[0].position.x,points[0].position.y, points[0].position.z);
+	Vec3f b(points[1].position.x,points[1].position.y, points[1].position.z);
+	Vec3f c(points[2].position.x,points[2].position.y, points[2].position.z);
+
+	norm = cross(c-a, b-a);
+	if (backFaceCulling != BackFaceCullingMode::CLOCKWISE) {
+		norm = norm * -1;
+	}
+
+	return dot(a, norm) < 0;
+}
+
 void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawMode)
 {
 	if (!verties || !currentFrame || !shader) {
@@ -391,18 +410,22 @@ void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
 		points.push_back(out);
 
 		if (points.size() == 3) {
-			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
-			if (clips.size()) {
-				int last = 1;
-				while (last < clips.size() - 1) {
-					drawTriangle(clips[0], clips[last], clips[last+1]);
-					last ++;
+			//背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps)
+			if (!backCulling(points)) {
+				std::vector<V2f> clips = SutherlandHodgeman(points, 3);
+				if (clips.size()) {
+					int last = 1;
+					while (last < clips.size() - 1) {
+						drawTriangle(clips[0], clips[last], clips[last+1]);
+						last ++;
+					}
 				}
 			}
 			points.clear();
 		}
 	}
 }
+
 void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
 {
 	if (!verties || !indices || !currentFrame || !shader) return;

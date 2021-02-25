@@ -76,7 +76,7 @@ int main(int argc, char * argv[])
 				pipeline.clearColor(.5f, .5f, .5f);
 				pipeline.clearDepth(1.f);
 
-				ang += 4;
+				//ang += 4;
 				auto model = rotate(0, ang , 0);
 				modelShader->setModel(model);
 				modelShader->setCamera(view);
@@ -160,6 +160,7 @@ int main(int argc, char * argv[])
 			}
 			printf("\n");
 		}
+		printf("look dir (%.2f %.2f %.2f)\n", lookDir.x, lookDir.y, lookDir.z);
 		fflush(stdout);
 	}
 

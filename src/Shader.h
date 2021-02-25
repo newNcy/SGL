@@ -7,7 +7,8 @@
 
 struct V2f 
 {
-	Vec4f position; Vec3f color;	//颜色
+	Vec4f position; 
+	Vec3f color;	//颜色
 	Vec2f uv;		//纹理坐标
 	Vec3f norm;		//法向量
 	Vec3f worldPosition; //世界坐标
