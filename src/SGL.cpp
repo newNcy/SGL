@@ -36,7 +36,13 @@ bool SGLContext::init(const char * winTitle, int x, int y, int width, int height
 		destroy();
 		return false;
 	}
+
+	if (SDL_SetRelativeMouseMode((SDL_bool)true)) {
+		return 0;
+	}
+
 	rgba8888 = new uint8_t[width*height*4];
+
 	return true;
 }
 

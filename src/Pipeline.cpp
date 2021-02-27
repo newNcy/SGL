@@ -1,7 +1,7 @@
 #include "Pipeline.h"
 #include "debug.h"
 
-void SGLPineline::makeFrameBuffer(int width, int height)
+void SGLPipeline::makeFrameBuffer(int width, int height)
 {
 	//尺寸一样就重用
 	if (currentFrame ) {
@@ -14,13 +14,13 @@ void SGLPineline::makeFrameBuffer(int width, int height)
 	currentFrame = new FrameBuffer(width, height);
 }
 
-const FrameBuffer & SGLPineline::getCurrentFrameBuffer() const
+const FrameBuffer & SGLPipeline::getCurrentFrameBuffer() const
 {
 	assert(currentFrame);
 	return *currentFrame;
 }
 		
-void SGLPineline::clearColor(float r, float g, float b)
+void SGLPipeline::clearColor(float r, float g, float b)
 {
 	if (!currentFrame) {
 		return;
@@ -33,7 +33,7 @@ void SGLPineline::clearColor(float r, float g, float b)
 	}
 }
 
-void SGLPineline::clearDepth(float d)
+void SGLPipeline::clearDepth(float d)
 {
 	if (!currentFrame) {
 		return;
@@ -46,7 +46,7 @@ void SGLPineline::clearDepth(float d)
 }
 
 
-void SGLPineline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, bool testz)
+void SGLPipeline::drawScreenLine(const ScreenPoint & a, const ScreenPoint & b, bool testz)
 {
 	if (!currentFrame) {
 		return;
@@ -139,7 +139,7 @@ float calcS(const Vec2i & a, const Vec2i & b,const Vec2i & c)
 	return res*0.5f;
 }
 
-void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & b, const ScreenPoint & c, bool testz)
+void SGLPipeline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & b, const ScreenPoint & c, bool testz)
 {
 	if (!currentFrame) {
 		return;
@@ -180,7 +180,7 @@ void SGLPineline::drawScreenTriangle(const ScreenPoint & a, const ScreenPoint & 
 }
 	
 
-bool SGLPineline::needClip(const Vec3f & pos)
+bool SGLPipeline::needClip(const Vec3f & pos)
 {
 	for (int i = 0; i < 3; ++ i) {
 		if (pos[i] < -1 || pos[i] > 1) {
@@ -190,7 +190,7 @@ bool SGLPineline::needClip(const Vec3f & pos)
 	return false;
 }
 
-Vec2i SGLPineline::viewPortTrans(const Vec4f & pos)
+Vec2i SGLPipeline::viewPortTrans(const Vec4f & pos)
 {
 	float x = (pos.x + 1)*0.5f;
 	float y = (-pos.y + 1)*0.5f;
@@ -198,12 +198,12 @@ Vec2i SGLPineline::viewPortTrans(const Vec4f & pos)
 	return Vec2i(x*(currentFrame->getWidth()-1), y*(currentFrame->getHeight()-1));
 }
 		
-void SGLPineline::drawArrayLine(const Vertex * verties, size_t count, DrawMode drawMode)
+void SGLPipeline::drawArrayLine(const Vertex * verties, size_t count, DrawMode drawMode)
 {
 }
 
 
-void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
+void SGLPipeline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 {
 	//图元装配
 	for (int i = 0; i < verts.size()/3; ++ i) {
@@ -221,9 +221,9 @@ void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 			screenPoints.push_back(p);
 		}
 		if (screenPoints.size() == 3) {
-			if (mode == DrawMode::SGL_TRIANGLE) {
+			if (mode == DrawMode::TRIANGLE) {
 				drawScreenTriangle(screenPoints[0], screenPoints[1], screenPoints[2], true);
-			} else if (mode == DrawMode::SGL_LINE) {
+			} else if (mode == DrawMode::LINE) {
 				drawScreenLine(screenPoints[0], screenPoints[1]);
 				drawScreenLine(screenPoints[1], screenPoints[2]);
 				drawScreenLine(screenPoints[2], screenPoints[0]);
@@ -233,227 +233,287 @@ void SGLPineline::draw(const std::vector<Vertex> & verts, DrawMode mode)
 	}
 }
 
-void SGLPineline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
-{
-	if (!currentFrame) {
-		return;
-	}
-
-	PROFILE(triangle);
-	auto clipA = a.position/a.position.w;
-	auto clipB = b.position/b.position.w;
-	auto clipC = c.position/c.position.w;
-
-	auto A = viewPortTrans(clipA);
-	auto B = viewPortTrans(clipB);
-	auto C = viewPortTrans(clipC);
-
-	auto bb = bbox(*currentFrame, A, B, C);
-	float S = calcS(A, B, C);
-	if (!S) {
-		return;
-	}
-
-	for (int x = bb.min.x; x <= bb.max.x; ++ x) {
-		for (int y = bb.min.y; y <= bb.max.y; ++ y) {
-			Vec2i p(x, y);
-			float s1 = calcS(B,p,C);
-			float s2 = calcS(A,p,C);
-			float s3 = calcS(A,p,B);
-			
-			float w1= s1/S;
-			float w2 = s2/S;
-			float w3 = s3/S;
-
-			float depth = clipA.z*w1+ clipB.z*w2 + clipC.z*w3;
-			V2f f;
-			f.position = a.position*w1 + b.position*w2 + c.position*w3;
-			
-			float k = w1/a.position.w + w2/b.position.w + w3/c.position.w;
-			w1 = w1/a.position.w/k;
-			w2 = w2/b.position.w/k;
-			w3 = w3/c.position.w/k;
-			f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
-			f.norm = a.norm*w1 + b.norm*w2 + c.norm*w3;
-			f.color = a.color*w1+ b.color*w2+ c.color*w3;
-			f.worldPosition = a.worldPosition*w1+ b.worldPosition*w2+ c.worldPosition*w3;
-
-			Vec4f color;
-			shader->onFragment(f, color);
-			
-			if (s1+s2+s3 <= S) {
-				float depthBuf = currentFrame->getDepth(x, y);
-				if (depthBuf > depth) {
-					currentFrame->setPixel(x, y, color);
-					currentFrame->setDepth(x, y, depth);
-				}
-			}		
-		}
-	}
-}
-
-
 bool inside(const V2f & v)
 {
-	auto & p = v.position;
-	return p.x > -p.w && p.x < p.w && p.y > -p.w && p.y < p.w && p.z > -p.w && p.z < p.w;
+    auto & p = v.position;
+    return p.x > -p.w && p.x < p.w && p.y > -p.w && p.y < p.w && p.z > -p.w && p.z < p.w;
 }
 
 //齐次裁剪
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
-	PROFILE(SutherlandHodgeman)
-	if (out.size() < 2) {
-		return std::move(out);
-	}
+    PROFILE(SutherlandHodgeman)
+        if (out.size() < 2) {
+            return std::move(out);
+        }
 
-	bool allInside = true;
-	for (int i = 0; i < count; ++ i) {
-		allInside &= inside(out[i]);
-	}
+    bool allInside = true;
+    for (int i = 0; i < count; ++ i) {
+        allInside &= inside(out[i]);
+    }
 
-	if (allInside) {
-		return std::move(out);
-	}
+    if (allInside) {
+        return std::move(out);
+    }
 
-	const std::vector<Vec4f> planes = 
-	{
-		{1, 0, 0, 1},
-		{-1, 0, 0, 1},
-		{0, 1, 0, 1},
-		{0, -1, 0, 1},
-		{0, 0, 1, 1},
-		{0, 0, -1, 1}
-	};
+    const std::vector<Vec4f> planes = 
+    {
+        {1, 0, 0, 1},
+        {-1, 0, 0, 1},
+        {0, 1, 0, 1},
+        {0, -1, 0, 1},
+        {0, 0, 1, 1},
+        {0, 0, -1, 1}
+    };
 
-	std::vector<V2f> in;
-	int idx = 0;
-	for (auto & plane : planes) {
-		if (!out.size()) { //剔光了
-			break;
-		}
-		std::swap(in, out);
-		out.clear();
-		float pred = dot(in[0].position, plane);
-		int pre = 0;
-		for (int i = 1; ; ++ i) {
-			if (i == in.size()) {
-				i = 0;
-			}
-			float di = dot(in[i].position, plane);
-			int code = (di >= 0.001) | ((pred >= 0.001)<<1);
-			switch(code) {
-				case 0: //都不在
-					break;
-				case 1: //i不在 j在
-					{
-						V2f clip = lerp(in[pre], in[i], pred/(pred-di));
-						out.push_back(clip);
-						out.push_back(in[i]);
-					}
-					break;
-				case 2: //i在j不在
-					{
-						V2f clip = lerp(in[pre], in[i], pred/(pred-di));
-						out.push_back(clip);
-					}
-					break;
-				case 3:
-					{
-						out.push_back(in[i]);
-					}
-					break;
-			}
-			if (!i) {
-				break;
-			}
-			pre = i;
-			pred = di;
-		}
-	}
-	return out;
+    std::vector<V2f> in;
+    int idx = 0;
+    for (auto & plane : planes) {
+        if (!out.size()) { //剔光了
+            break;
+        }
+        std::swap(in, out);
+        out.clear();
+        float pred = dot(in[0].position, plane);
+        int pre = 0;
+        for (int i = 1; ; ++ i) {
+            if (i == in.size()) {
+                i = 0;
+            }
+            float di = dot(in[i].position, plane);
+            int code = (di >= 0.001) | ((pred >= 0.001)<<1);
+            switch(code) {
+                case 0: //都不在
+                    break;
+                case 1: //i不在 j在
+                    {
+                        V2f clip = lerp(in[pre], in[i], pred/(pred-di));
+                        out.push_back(clip);
+                        out.push_back(in[i]);
+                    }
+                    break;
+                case 2: //i在j不在
+                    {
+                        V2f clip = lerp(in[pre], in[i], pred/(pred-di));
+                        out.push_back(clip);
+                    }
+                    break;
+                case 3:
+                    {
+                        out.push_back(in[i]);
+                    }
+                    break;
+            }
+            if (!i) {
+                break;
+            }
+            pre = i;
+            pred = di;
+        }
+    }
+    return out;
 }
 
-bool SGLPineline::backCulling(const std::vector<V2f> & points)
+
+void SGLPipeline::drawLine(std::vector<V2f> & points)
 {
-	if (backFaceCulling == BackFaceCullingMode::DISABLE) {
-		return false;
-	}
-	Vec3f norm;
-	Vec3f a(points[0].position.x,points[0].position.y, points[0].position.z);
-	Vec3f b(points[1].position.x,points[1].position.y, points[1].position.z);
-	Vec3f c(points[2].position.x,points[2].position.y, points[2].position.z);
+    std::vector<V2f> clips = SutherlandHodgeman(points, 2);
+    if (clips.size()) {
+        auto & a = clips[0];
+        auto & b = clips[1];
+        auto ca = clips[0].position/clips[0].position.w;
+        auto cb = clips[1].position/clips[1].position.w;
 
-	norm = cross(c-a, b-a);
-	if (backFaceCulling != BackFaceCullingMode::CLOCKWISE) {
-		norm = norm * -1;
-	}
+        auto A = viewPortTrans(ca);
+        auto B = viewPortTrans(cb);
+        int step = B.x - A.x;
+        
+        float k = (B.y - A.y)*1.f/(B.x-A.x);
+        float err = 0;
 
-	return dot(a, norm) < 0;
+        int ox = A.x;
+        int L = B.x-A.x;
+        while (A.x == B.x) {
+            A.x += step;
+            err += k;
+            if (err > 0.5) {
+               int dy = err; 
+               err -= dy;
+               A.y += dy;
+            }
+        }
+
+
+        int x = A.x, y = A.y;
+        float w1 = (A.x - ox)*1.f/L;
+        float w2 = 1 - w1;
+        V2f f;
+        f.position = a.position*w1 + b.position*w2;
+        f.uv = a.uv*w1 + b.uv*w2;
+        f.norm = a.norm*w1 + b.norm*w2;
+        f.color = a.color*w1+ b.color*w2;
+        f.worldPosition = a.worldPosition*w1+ b.worldPosition*w2;
+
+        Vec4f color;
+        shader->onFragment(f, color);
+
+        float depthBuf = currentFrame->getDepth(x, y);
+        float depth = ca.z * w1 + cb.z * w2;
+        if (depthBuf > depth) {
+            currentFrame->setPixel(x, y, color);
+            currentFrame->setDepth(x, y, depth);
+        }
+    }
+
 }
 
-void SGLPineline::drawArray(const Vertex * verties, size_t count, DrawMode drawMode)
+void SGLPipeline::drawTriangle0(std::vector<V2f> & points)
 {
-	if (!verties || !currentFrame || !shader) {
-		return;
-	}
-
-	std::vector<V2f> points;
-	for (int i = 0; i < count; ++ i) {
-		Vertex v = verties[i];
-		V2f out;
-		out.position = v.position;
-		out.color = v.color;
-		out.uv = v.uv;
-		out.norm = v.norm;
-		shader->onVertex(v, out);
-		points.push_back(out);
-
-		if (points.size() == 3) {
-			//背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps)
-			if (!backCulling(points)) {
-				std::vector<V2f> clips = SutherlandHodgeman(points, 3);
-				if (clips.size()) {
-					int last = 1;
-					while (last < clips.size() - 1) {
-						drawTriangle(clips[0], clips[last], clips[last+1]);
-						last ++;
-					}
-				}
-			}
-			points.clear();
-		}
-	}
+    if (!backCulling(points)) {
+        std::vector<V2f> clips = SutherlandHodgeman(points, 3);
+        if (clips.size()) {
+            int last = 1;
+            while (last < clips.size() - 1) {
+                drawTriangle(clips[0], clips[last], clips[last+1]);
+                last ++;
+            }
+        }
+    }
 }
 
-void SGLPineline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+void SGLPipeline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
 {
-	if (!verties || !indices || !currentFrame || !shader) return;
+    if (!currentFrame) {
+        return;
+    }
 
-	std::vector<V2f> points;
-	for (int i = 0; i < indiesCount; ++ i) {
-		Vertex v = verties[indices[i]];
-		V2f out;
-		out.position = v.position;
-		out.color = v.color;
-		out.uv = v.uv;
-		out.norm = v.norm;
-		shader->onVertex(v, out);
-		points.push_back(out);
+    PROFILE(triangle);
+    auto clipA = a.position/a.position.w;
+    auto clipB = b.position/b.position.w;
+    auto clipC = c.position/c.position.w;
 
-		if (points.size() == 3) {
-			std::vector<V2f> clips = SutherlandHodgeman(points, 3);
-			if (clips.size()) {
+    auto A = viewPortTrans(clipA);
+    auto B = viewPortTrans(clipB);
+    auto C = viewPortTrans(clipC);
 
-				int last = 1;
-				while (last < clips.size() - 1) {
-					drawTriangle(clips[0], clips[last], clips[last+1]);
-					last ++;
-				}
-			}
-			points.clear();
-		}
-	}
+    auto bb = bbox(*currentFrame, A, B, C);
+    float S = calcS(A, B, C);
+    if (!S) {
+        return;
+    }
+
+    for (int x = bb.min.x; x <= bb.max.x; ++ x) {
+        for (int y = bb.min.y; y <= bb.max.y; ++ y) {
+            Vec2i p(x, y);
+            float s1 = calcS(B,p,C);
+            float s2 = calcS(A,p,C);
+            float s3 = calcS(A,p,B);
+
+            float w1= s1/S;
+            float w2 = s2/S;
+            float w3 = s3/S;
+
+            float depth = clipA.z*w1+ clipB.z*w2 + clipC.z*w3;
+            V2f f;
+            f.position = a.position*w1 + b.position*w2 + c.position*w3;
+
+            float k = w1/a.position.w + w2/b.position.w + w3/c.position.w;
+            w1 = w1/a.position.w/k;
+            w2 = w2/b.position.w/k;
+            w3 = w3/c.position.w/k;
+            f.uv = a.uv*w1 + b.uv*w2 + c.uv*w3;
+            f.norm = a.norm*w1 + b.norm*w2 + c.norm*w3;
+            f.color = a.color*w1+ b.color*w2+ c.color*w3;
+            f.worldPosition = a.worldPosition*w1+ b.worldPosition*w2+ c.worldPosition*w3;
+
+            Vec4f color;
+            shader->onFragment(f, color);
+
+            if (s1+s2+s3 <= S) {
+                float depthBuf = currentFrame->getDepth(x, y);
+                if (depthBuf > depth) {
+                    currentFrame->setPixel(x, y, color);
+                    currentFrame->setDepth(x, y, depth);
+                }
+            }		
+        }
+    }
+}
+
+bool SGLPipeline::backCulling(const std::vector<V2f> & points)
+{
+    if (backFaceCulling == BackFaceCullingMode::DISABLE) {
+        return false;
+    }
+    Vec3f norm;
+    Vec3f a(points[0].position.x,points[0].position.y, points[0].position.z);
+    Vec3f b(points[1].position.x,points[1].position.y, points[1].position.z);
+    Vec3f c(points[2].position.x,points[2].position.y, points[2].position.z);
+
+    norm = cross(c-a, b-a);
+    if (backFaceCulling != BackFaceCullingMode::CLOCKWISE) {
+        norm = norm * -1;
+    }
+
+    return dot(a, norm) < 0;
+}
+
+void SGLPipeline::drawArray(const Vertex * verties, size_t count, DrawMode drawMode)
+{
+    if (!verties || !currentFrame || !shader) {
+        return;
+    }
+
+    std::vector<V2f> points;
+    for (int i = 0; i < count; ++ i) {
+        Vertex v = verties[i];
+        V2f out;
+        out.position = v.position;
+        out.color = v.color;
+        out.uv = v.uv;
+        out.norm = v.norm;
+        shader->onVertex(v, out);
+        points.push_back(out);
+
+        if ( drawMode == DrawMode::TRIANGLE && points.size() == 3) {
+            //背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps)
+            drawTriangle0(points);
+            points.clear();
+        }else if (drawMode == DrawMode::LINE && points.size() == 2) {
+            drawLine(points);
+            points.clear();
+        }
+    }
+}
+
+void SGLPipeline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+{
+    if (!verties || !indices || !currentFrame || !shader) return;
+
+    std::vector<V2f> points;
+    for (int i = 0; i < indiesCount; ++ i) {
+        Vertex v = verties[indices[i]];
+        V2f out;
+        out.position = v.position;
+        out.color = v.color;
+        out.uv = v.uv;
+        out.norm = v.norm;
+        shader->onVertex(v, out);
+        points.push_back(out);
+
+        if (points.size() == 3) {
+            std::vector<V2f> clips = SutherlandHodgeman(points, 3);
+            if (clips.size()) {
+
+                int last = 1;
+                while (last < clips.size() - 1) {
+                    drawTriangle(clips[0], clips[last], clips[last+1]);
+                    last ++;
+                }
+            }
+            points.clear();
+        }
+    }
 
 }
 

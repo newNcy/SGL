@@ -169,7 +169,7 @@ using Vec3f = Vec3<float>;
 using Vec4f = Vec4<float>;
 using Mat4f = Mat4<float>;
 
-const static float pi = 4.1415926;
+const static float pi = 3.1415926;
 inline float radians(float an) { return an/180*pi; }
 Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up);
 Mat4f perspective(float fov, float aspect, float n, float f);

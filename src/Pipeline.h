@@ -22,8 +22,10 @@ V2f lerp(const V2f & start, const V2f & end, float factor);
 
 enum class DrawMode
 {
-	SGL_LINE,
-	SGL_TRIANGLE,
+	LINE,
+	LINE_STRIP,
+	TRIANGLE,
+	TRIANGLE_STRIP,
 };
 
 enum class BackFaceCullingMode
@@ -33,7 +35,7 @@ enum class BackFaceCullingMode
 	COUTER_CLOCKWISE
 };
 
-class SGLPineline
+class SGLPipeline
 {
 	public:
 		void makeFrameBuffer(int width, int height);
@@ -51,6 +53,8 @@ class SGLPineline
 
 		void drawArray(const Vertex * verties, size_t count, DrawMode drawMode);
 		
+		void drawTriangle0(std::vector<V2f> & points);
+		void drawLine(std::vector<V2f> & points);
 		void drawTriangle(const V2f & a, const V2f & b, const V2f & c);
 		void drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indies, DrawMode drawMode);
 

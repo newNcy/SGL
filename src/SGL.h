@@ -14,6 +14,7 @@
 bool initSGL();
 void releaseSGL();
 
+
 class SGLContext
 {
 	public:

@@ -14,9 +14,10 @@ int main(int argc, char * argv[])
 	initSGL();
 
 	SGLContext sgl;
-	sgl.init("wai bi ba bo", WINPOS_CENTER, WINPOS_CENTER, 800, 800);
-	SGLPineline pipeline;
-	pipeline.makeFrameBuffer(800, 800);
+    int width = 800, height = 800;
+	sgl.init("wai bi ba bo", WINPOS_CENTER, WINPOS_CENTER, width, height);
+	SGLPipeline pipeline;
+	pipeline.makeFrameBuffer(width, height);
 
 	auto textureShader = std::make_shared<TextureShader>();
 	auto colorShader = std::make_shared<NormalShader>();
@@ -27,7 +28,7 @@ int main(int argc, char * argv[])
 	auto ground = genGround(20, 20);
 	
 	auto loader = std::make_shared<OBJLoader>();
-	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
+	auto nanosuit = loader->load("../resource/model/vikingroom/vikingroom.obj");
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
 	int dis = (nanosuit->boundingBox.max.y - nanosuit->boundingBox.min.y)/2;
@@ -40,11 +41,8 @@ int main(int argc, char * argv[])
 
 
 	bool quit = false;
-	auto mode = DrawMode::SGL_TRIANGLE;
+	auto mode = DrawMode::TRIANGLE;
 
-	if (SDL_SetRelativeMouseMode((SDL_bool)true)) {
-		return 0;
-	}
 
 	long frameCount = 0;
 	long useTime = 0;
@@ -58,26 +56,38 @@ int main(int argc, char * argv[])
 	//增加阳光
 	modelShader->parallelLights["sun"] = 
 	{
-		{1, 0, 1},
+		{0, 0, 1},
 		{1.f, 1.f, 1.f}
 	};
 	
+    /*
 	modelShader->parallelLights["moon"] = 
 	{
 		{0, 1, -1},
 		{1.f, 0.f, 1.f}
 	};
+    */
+
+    std::vector<Vertex> testLine = {
+        {{-5, 0, 0,}, {1,0,0},},
+        {{5, 5, 0,}, {0,1,0},},
+    };
 	
 	while (!quit) {
 		{
 			PROFILE(frame);
 			{
 				PROFILE(rendering);
-				pipeline.clearColor(.5f, .5f, .5f);
+				pipeline.clearColor(.0f, .0f, .0f);
 				pipeline.clearDepth(1.f);
 
+				auto model = rotate(0, 180, 0) * moveto(0,1, 0);
+				colorShader->setCamera(view);
+                pipeline.useShader(colorShader);
+                //pipeline.drawArray(&ground[0], 6, DrawMode::TRIANGLE);
+                //pipeline.drawArray(&testLine[0], 2, DrawMode::LINE);
 				//ang += 4;
-				auto model = rotate(0, ang , 0);
+                pipeline.useShader(modelShader);
 				modelShader->setModel(model);
 				modelShader->setCamera(view);
 
@@ -152,15 +162,15 @@ int main(int argc, char * argv[])
 			useTime = 0;
 			frameCount = 0;
 		}
-		printf("%3.1f fps\n", lastfps);
+		//printf("%3.1f fps\n", lastfps);
 		for (auto & mesh : nanosuit->meshs) {
 			printf("%s ", mesh->name.c_str());
 			if (mesh->material) {
-				printf("usemtl %s ", mesh->material->name.c_str());
+				//printf("usemtl %s ", mesh->material->name.c_str());
 			}
-			printf("\n");
+			//printf("\n");
 		}
-		printf("look dir (%.2f %.2f %.2f)\n", lookDir.x, lookDir.y, lookDir.z);
+		//printf("yaw %.2f pitch %.2f, look dir (%.2f %.2f %.2f)\n", yaw, pitch, lookDir.x, lookDir.y, lookDir.z);
 		fflush(stdout);
 	}
 

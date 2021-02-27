@@ -94,7 +94,11 @@ struct Profiler
 		}
 	}
 };
+#if 0
 #define PROFILE(X) Profiler X##the__profiler(#X);
+#else 
+#define PROFILE(X) 
+#endif
 
 template <typename V>
 void print(const V & v, int d = 2, char end = '\n')

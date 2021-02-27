@@ -112,15 +112,17 @@ std::vector<Vertex> genSphare(float radius)
 
 std::vector<Vertex> genGround(int width, int height)
 {
+    width /= 2.0f;
+    height /= 2.0f;
 	return 
 	{
-		{{0, 0, 0},{0.3f, 0.3f, 0.3f}, {0,0}, {}},
-		{{0, 0, height}, {0.3f, 0.3f, 0.3f}, {0,1},{}},
-		{{width, 0, height}, {0.3f, 0.3f, 0.3f}, {1,1},{}},
+		{{-width, 0, -height},{1, 0.f, 0.f}, {0,0}, {}},
+		{{-width, 0, height}, {0.f, 1.f, 0.f}, {0,1},{}},
+		{{width, 0, height}, {0.0f, 0.0f, 1.f}, {1,1},{}},
 
-		{{0, 0, 0}, {0.3f, 0.3f, 0.3f}, {0,0}, {}},
-		{{width, 0, 0}, {0.3f, 0.3f, 0.3f}, {1,0},{}},
-		{{width, 0, height}, {0.3f, 0.3f, 0.3f}, {1,1},{}},
+		{{-width, 0, -height}, {1.f, 0.f, 0.f}, {0,0}, {}},
+		{{width, 0, height}, {0.f, 0.f, 1.f}, {1,0},{}},
+		{{width, 0, -height}, {0.f, 1.f, 0.f}, {1,1},{}},
 	};
 }
 

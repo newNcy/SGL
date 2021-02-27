@@ -1,0 +1,16 @@
+# 3ds Max Wavefront OBJ Exporter v0.94b - (c)2007 guruware
+# 创建的文件:17.05.2017 11:41:48
+
+newmtl Texture1
+	Ns 0.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 1.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.8000 0.8000 0.8000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka H:\mymodel\20170508\15个精美的卡通游戏场景3D模型\vikingroom\texture.png
+	map_Kd H:\mymodel\20170508\15个精美的卡通游戏场景3D模型\vikingroom\texture.png

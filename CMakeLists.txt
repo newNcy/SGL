@@ -3,6 +3,11 @@ project(sgl)
 set(SDL third_part/SDL2-2.0.12)
 set(STB third_part/stb)
 
+
+set(CMAKE_BUILD_TYPE Profile)
+set(CMAKE_CXX_FLAGS_PROFILE "-pg -g")
+#add_definitions("-g")
+
 cmake_minimum_required(VERSION 3.17)
 
 add_subdirectory(${SDL})
