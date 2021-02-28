@@ -8,7 +8,7 @@
  * 定义公共数据给shader和加载器使用
  */
 
-struct BoudingBox3d
+struct BoundingBox3d
 {
 	Vec3f min;
 	Vec3f max;
@@ -47,7 +47,7 @@ struct Mesh
 
 struct Model
 {
-	BoudingBox3d boundingBox;
+	BoundingBox3d boundingBox;
 	std::vector<std::shared_ptr<Mesh>> meshs;
 };
 

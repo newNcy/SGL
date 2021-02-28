@@ -6,7 +6,10 @@
 #include <chrono>
 #include <map>
 #include <vector>
+#include "Model.h"
 
+class SGLPipeline;
+class SGLShader;
 struct ProfileEntry
 {
 	std::string tag;
@@ -113,3 +116,10 @@ void print(const V & v, int d = 2, char end = '\n')
 
 void print(const Mat4f & m, char end = '\n');
 
+
+class DebugRenderer
+{
+    public:
+        DebugRenderer();
+        void drawBoundingBox(SGLPipeline & pipeline, const BoundingBox3d & box, std::shared_ptr<SGLShader> shader);
+};

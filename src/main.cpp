@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
 	auto ground = genGround(20, 20);
 	
 	auto loader = std::make_shared<OBJLoader>();
-	auto nanosuit = loader->load("../resource/model/vikingroom/vikingroom.obj");
+	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
 	int dis = (nanosuit->boundingBox.max.y - nanosuit->boundingBox.min.y)/2;
@@ -68,11 +68,7 @@ int main(int argc, char * argv[])
 	};
     */
 
-    std::vector<Vertex> testLine = {
-        {{-5, 0, 0,}, {1,0,0},},
-        {{5, 5, 0,}, {0,1,0},},
-    };
-	
+    DebugRenderer debug;
 	while (!quit) {
 		{
 			PROFILE(frame);
@@ -83,9 +79,9 @@ int main(int argc, char * argv[])
 
 				auto model = rotate(0, 180, 0) * moveto(0,1, 0);
 				colorShader->setCamera(view);
+				colorShader->setModel(model);
                 pipeline.useShader(colorShader);
                 //pipeline.drawArray(&ground[0], 6, DrawMode::TRIANGLE);
-                //pipeline.drawArray(&testLine[0], 2, DrawMode::LINE);
 				//ang += 4;
                 pipeline.useShader(modelShader);
 				modelShader->setModel(model);
@@ -96,6 +92,7 @@ int main(int argc, char * argv[])
 					modelShader->setMaterial(mesh->material);
 					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), mode);	
 				}
+                debug.drawBoundingBox(pipeline, nanosuit->boundingBox, colorShader); 
 			}
 
 			SDL_Event event;
@@ -164,7 +161,7 @@ int main(int argc, char * argv[])
 		}
 		//printf("%3.1f fps\n", lastfps);
 		for (auto & mesh : nanosuit->meshs) {
-			printf("%s ", mesh->name.c_str());
+			//printf("%s ", mesh->name.c_str());
 			if (mesh->material) {
 				//printf("usemtl %s ", mesh->material->name.c_str());
 			}

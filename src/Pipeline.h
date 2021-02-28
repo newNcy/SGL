@@ -60,6 +60,8 @@ class SGLPipeline
 
 		BackFaceCullingMode backFaceCulling = BackFaceCullingMode::CLOCKWISE;
 	private:
+        bool testDepth(int x, int y, float depth);
+        void writeFragment(int x, int y, float depth, const Vec4f & color);
 		bool backCulling(const std::vector<V2f> & points);
 		void draw(const std::vector<Vertex> & verts, DrawMode mode);
 		int xy2idx(int x, int y) const;

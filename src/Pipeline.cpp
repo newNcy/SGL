@@ -242,18 +242,21 @@ bool inside(const V2f & v)
 //齐次裁剪
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
-    PROFILE(SutherlandHodgeman)
-        if (out.size() < 2) {
-            return std::move(out);
-        }
+    PROFILE(SutherlandHodgeman);
+    if (out.size() < 2) {
+        return std::move(out);
+    }
+    
+    std::vector<V2f> in;
 
     bool allInside = true;
     for (int i = 0; i < count; ++ i) {
-        allInside &= inside(out[i]);
+        bool iin = inside(out[i]);
+        allInside &= iin;
     }
 
     if (allInside) {
-        return std::move(out);
+        return out;
     }
 
     const std::vector<Vec4f> planes = 
@@ -266,8 +269,39 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
         {0, 0, -1, 1}
     };
 
-    std::vector<V2f> in;
+
     int idx = 0;
+
+    //线段不是封闭图形，做一次裁剪就行
+    if (count == 2) {
+        for (auto & plane : planes) {
+            std::swap(in, out);
+            if (in.empty()) {
+                break;
+            }
+            out.clear();
+
+            float da = dot(in[0].position, plane);
+            float db = dot(in[1].position, plane);
+            int code = ((da >= 0.001) <<1)| (db >= 0.001);
+            //无论怎么样每次都产生两个否则就剔除了
+            if (code == 3) {
+                std::swap(in, out);
+            }else if (code == 1) {
+                V2f clip = lerp(in[0], in[1], da/(da-db));
+                out.push_back(clip);
+                out.push_back(in[1]);
+            }else if (code == 2) {
+                V2f clip = lerp(in[0], in[1], da/(da-db));
+                out.push_back(in[0]);
+                out.push_back(clip);
+            }else {
+                break;
+            }
+        }
+        return out;
+    }
+
     for (auto & plane : planes) {
         if (!out.size()) { //剔光了
             break;
@@ -314,6 +348,17 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
     return out;
 }
 
+bool SGLPipeline::testDepth(int x, int y, float depth)
+{
+    float depthBuf = currentFrame->getDepth(x, y);
+    return depthBuf > depth;
+}
+
+void SGLPipeline::writeFragment(int x, int y, float depth, const Vec4f & color)
+{
+    currentFrame->setPixel(x, y, color);
+    currentFrame->setDepth(x, y, depth);
+}
 
 void SGLPipeline::drawLine(std::vector<V2f> & points)
 {
@@ -326,45 +371,48 @@ void SGLPipeline::drawLine(std::vector<V2f> & points)
 
         auto A = viewPortTrans(ca);
         auto B = viewPortTrans(cb);
-        int step = B.x - A.x;
-        
-        float k = (B.y - A.y)*1.f/(B.x-A.x);
-        float err = 0;
 
-        int ox = A.x;
-        int L = B.x-A.x;
-        while (A.x == B.x) {
-            A.x += step;
+        int dx = B.x - A.x;
+        int dy = B.y - A.y;
+        bool steep = abs(dy) > abs(dx);
+
+        if (steep) {
+            std::swap(dx, dy);
+            std::swap(A.x, A.y);
+            std::swap(B.x, B.y);
+        }
+        if (A.x > B.x) {
+            std::swap(A, B);
+            std::swap(a, b);
+        }
+
+        float k = abs(float(dy)/dx);
+        int ystep = B.y > A.y ? 1:-1;
+        float err = 0; 
+        while (A.x != B.x + 1) {
+            int x = A.x, y = A.y;
+            if (steep) {
+                std::swap(x, y);
+            }
+
+            float right = abs(float(B.x - A.x)/dx);
+            V2f f = lerp(a, b, 1-right);
+
+            Vec4f color;
+            float depth = lerp(ca.z, cb.z, 1-right);
+            if (testDepth(x, y, depth)) {
+                shader->onFragment(f, color);
+                writeFragment(x, y, depth, color);
+            }
+
+            A.x ++;
             err += k;
             if (err > 0.5) {
-               int dy = err; 
-               err -= dy;
-               A.y += dy;
+                A.y += ystep;
+                err -= 1;
             }
         }
-
-
-        int x = A.x, y = A.y;
-        float w1 = (A.x - ox)*1.f/L;
-        float w2 = 1 - w1;
-        V2f f;
-        f.position = a.position*w1 + b.position*w2;
-        f.uv = a.uv*w1 + b.uv*w2;
-        f.norm = a.norm*w1 + b.norm*w2;
-        f.color = a.color*w1+ b.color*w2;
-        f.worldPosition = a.worldPosition*w1+ b.worldPosition*w2;
-
-        Vec4f color;
-        shader->onFragment(f, color);
-
-        float depthBuf = currentFrame->getDepth(x, y);
-        float depth = ca.z * w1 + cb.z * w2;
-        if (depthBuf > depth) {
-            currentFrame->setPixel(x, y, color);
-            currentFrame->setDepth(x, y, depth);
-        }
     }
-
 }
 
 void SGLPipeline::drawTriangle0(std::vector<V2f> & points)
@@ -426,14 +474,12 @@ void SGLPipeline::drawTriangle(const V2f & a, const V2f & b, const V2f & c)
             f.color = a.color*w1+ b.color*w2+ c.color*w3;
             f.worldPosition = a.worldPosition*w1+ b.worldPosition*w2+ c.worldPosition*w3;
 
-            Vec4f color;
-            shader->onFragment(f, color);
 
             if (s1+s2+s3 <= S) {
-                float depthBuf = currentFrame->getDepth(x, y);
-                if (depthBuf > depth) {
-                    currentFrame->setPixel(x, y, color);
-                    currentFrame->setDepth(x, y, depth);
+                if (testDepth(x, y, depth)) {
+                    Vec4f color;
+                    shader->onFragment(f, color);
+                    writeFragment(x, y, depth, color);
                 }
             }		
         }

@@ -134,23 +134,23 @@ std::shared_ptr<Model> OBJLoader::load(const char * path)
 				boundingBox.max = pos;
 			}else {
 				if (pos.x < boundingBox.min.x) {
-					boundingBox.min.x = pos.x;
+					boundingBox.min.x = pos.x - 0.02;
 				}
 				if (pos.y < boundingBox.min.y) {
-					boundingBox.min.y = pos.y;
+					boundingBox.min.y = pos.y - 0.02;
 				}
 				if (pos.z < boundingBox.min.z) {
-					boundingBox.min.z = pos.z;
+					boundingBox.min.z = pos.z - 0.02;
 				}
 
 				if (pos.x > boundingBox.max.x) {
-					boundingBox.max.x = pos.x;
+					boundingBox.max.x = pos.x + 0.02;
 				}
 				if (pos.y > boundingBox.max.y) {
-					boundingBox.max.y = pos.y;
+					boundingBox.max.y = pos.y + 0.02;
 				}
 				if (pos.z > boundingBox.max.z) {
-					boundingBox.max.z = pos.z;
+					boundingBox.max.z = pos.z + 0.02;
 				}
 			}
 		}else if (type == "vt") {
