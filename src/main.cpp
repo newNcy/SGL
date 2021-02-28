@@ -25,10 +25,11 @@ int main(int argc, char * argv[])
 
 	auto cube = genCube();
 	auto sphare = genSphare(1.f);
-	auto ground = genGround(20, 20);
+	auto ground = genGround(30, 30);
 	
 	auto loader = std::make_shared<OBJLoader>();
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
+	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
 	int dis = (nanosuit->boundingBox.max.y - nanosuit->boundingBox.min.y)/2;
@@ -69,30 +70,59 @@ int main(int argc, char * argv[])
     */
 
     DebugRenderer debug;
+
+    Vec3f red = {1, 0,0};
+    Vec3f green = {0, 1,0};
+    Vec3f blue = {0, 0,1};
+
+    std::vector<Vertex> axis = {
+        {{0,0,0},red}, {red, red},
+        {{0,0,0},green}, {green, green},
+        {{0,0,0},blue}, {blue, blue},
+    };
+
+    bool r = true;
 	while (!quit) {
 		{
 			PROFILE(frame);
 			{
 				PROFILE(rendering);
-				pipeline.clearColor(.0f, .0f, .0f);
+				pipeline.clearColor(.1f, .1f, .1f);
 				pipeline.clearDepth(1.f);
 
-				auto model = rotate(0, 180, 0) * moveto(0,1, 0);
 				colorShader->setCamera(view);
+				modelShader->setCamera(view);
+				
+                Mat4f model;
 				colorShader->setModel(model);
                 pipeline.useShader(colorShader);
-                //pipeline.drawArray(&ground[0], 6, DrawMode::TRIANGLE);
-				//ang += 4;
-                pipeline.useShader(modelShader);
-				modelShader->setModel(model);
-				modelShader->setCamera(view);
+                pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
+                if (r) {
+                    ang += 4;
+                }
 
+                model = rotate(0, int(180 + ang)%360, 0) * moveto(-5, 0,0);
+                modelShader->setModel(model);
+                pipeline.useShader(modelShader);
 				for (auto & mesh : nanosuit->meshs) {
-					Profiler _(mesh->name.c_str());
+					//Profiler _(mesh->name.c_str());
 					modelShader->setMaterial(mesh->material);
 					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), mode);	
 				}
+				colorShader->setModel(model);
+                pipeline.useShader(colorShader);
                 debug.drawBoundingBox(pipeline, nanosuit->boundingBox, colorShader); 
+
+                model = rotate(0, 180,0) * moveto(10, 0,0);
+				modelShader->setModel(model);
+                pipeline.useShader(modelShader);
+				for (auto & mesh : vikingroom->meshs) {
+					//Profiler _(mesh->name.c_str());
+					modelShader->setMaterial(mesh->material);
+					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), mode);	
+                }
+				colorShader->setModel(model);
+                debug.drawBoundingBox(pipeline, vikingroom->boundingBox, colorShader); 
 			}
 
 			SDL_Event event;
@@ -139,6 +169,12 @@ int main(int argc, char * argv[])
 							case 'd':
 								campos = campos + normalize(cross(up, lookDir));
 								break;
+                            case SDLK_ESCAPE:
+                                quit = true;
+                                break;
+                            case SDLK_SPACE:
+                                r = !r; 
+                                break;
 						}
 
 					}
@@ -159,6 +195,9 @@ int main(int argc, char * argv[])
 			useTime = 0;
 			frameCount = 0;
 		}
+        char title[128] = {0};
+        sprintf(title, "fps %3.1f", lastfps);
+        SDL_SetWindowTitle(sgl.winPtr(), title);
 		//printf("%3.1f fps\n", lastfps);
 		for (auto & mesh : nanosuit->meshs) {
 			//printf("%s ", mesh->name.c_str());

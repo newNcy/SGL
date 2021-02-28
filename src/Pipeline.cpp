@@ -198,40 +198,6 @@ Vec2i SGLPipeline::viewPortTrans(const Vec4f & pos)
 	return Vec2i(x*(currentFrame->getWidth()-1), y*(currentFrame->getHeight()-1));
 }
 		
-void SGLPipeline::drawArrayLine(const Vertex * verties, size_t count, DrawMode drawMode)
-{
-}
-
-
-void SGLPipeline::draw(const std::vector<Vertex> & verts, DrawMode mode)
-{
-	//图元装配
-	for (int i = 0; i < verts.size()/3; ++ i) {
-		std::vector<ScreenPoint> screenPoints;
-		for (int j = 0; j < 3; ++ j) {
-			auto & vert = verts[i*3 + j];
-			if (needClip(vert.position)) {
-				continue;
-			}
-			Vec4f color;// = shader->onFragment(vert);
-			ScreenPoint p;
-			p.position = viewPortTrans(vert.position);
-			p.color = Vec3f(color.r, color.g, color.b);
-			p.depth  = vert.position.z;
-			screenPoints.push_back(p);
-		}
-		if (screenPoints.size() == 3) {
-			if (mode == DrawMode::TRIANGLE) {
-				drawScreenTriangle(screenPoints[0], screenPoints[1], screenPoints[2], true);
-			} else if (mode == DrawMode::LINE) {
-				drawScreenLine(screenPoints[0], screenPoints[1]);
-				drawScreenLine(screenPoints[1], screenPoints[2]);
-				drawScreenLine(screenPoints[2], screenPoints[0]);
-			}
-
-		}
-	}
-}
 
 bool inside(const V2f & v)
 {
@@ -356,8 +322,8 @@ bool SGLPipeline::testDepth(int x, int y, float depth)
 
 void SGLPipeline::writeFragment(int x, int y, float depth, const Vec4f & color)
 {
-    currentFrame->setPixel(x, y, color);
     currentFrame->setDepth(x, y, depth);
+    currentFrame->setPixel(x, y, color);
 }
 
 void SGLPipeline::drawLine(std::vector<V2f> & points)
@@ -384,6 +350,7 @@ void SGLPipeline::drawLine(std::vector<V2f> & points)
         if (A.x > B.x) {
             std::swap(A, B);
             std::swap(a, b);
+            std::swap(ca, cb);
         }
 
         float k = abs(float(dy)/dx);

@@ -42,6 +42,7 @@ struct Mesh
 {
 	std::string name;
 	std::vector<Vertex> verties;
+	std::vector<uint32_t> indices;
 	std::shared_ptr<Material> material;
 };
 

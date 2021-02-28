@@ -30,12 +30,19 @@ class NormalShader : public SGLShader
 	
 	protected:
 		const float pi = 3.1415926;
-		Mat4f model, view, projection;
+		Mat4f model, view, projection, normalMatrix;
 	public:
 		void setModel(const Mat4f & m) 
 		{
 			model = m;
+            normalMatrix = m;
+            normalMatrix[3] = Vec4f(0, 0, 0, 1);
 		}
+
+        void setNormalMatrix(const Mat4f & nm)
+        {
+            normalMatrix = nm;
+        }
 
 		void setCamera(const Mat4f & c)
 		{
@@ -45,7 +52,7 @@ class NormalShader : public SGLShader
 		NormalShader()
 		{
 			//print(view);
-			projection = perspective(60, 1.f, 0.1f, 1000);
+			projection = perspective(60, 1.f, .1f, 1000.f);
 		}
 
 		void onVertex(const Vertex & vert, V2f & out) override
@@ -53,7 +60,7 @@ class NormalShader : public SGLShader
 			PROFILE(vertex_shader);
 			out.position = Vec4f(vert.position,1) * model * view * projection;
 			auto worldPos = Vec4f(vert.position, 1) * model;
-			auto worldNorm = Vec4f(vert.norm, 1) * model;
+			auto worldNorm = Vec4f(vert.norm, 1) * normalMatrix;
 			out.worldPosition = Vec3f(worldPos.x, worldPos.y, worldPos.z);
 			out.norm = Vec3f(worldNorm.x, worldNorm.y, worldNorm.z);
 		}

@@ -22,6 +22,7 @@ class SGLContext
 		bool init(const char * winTitle, int x, int y, int width, int height, int winflags = WIN_RESIZABLE);
 		void swapBuffer(const FrameBuffer & buffer);
 		void destroy();
+        SDL_Window * winPtr() { return window; }
 	private:
 		int width = 0;
 		int height = 0;
