@@ -4,18 +4,19 @@ set(SDL third_part/SDL2-2.0.12)
 set(STB third_part/stb)
 
 
-set(CMAKE_BUILD_TYPE Profile)
-set(CMAKE_CXX_FLAGS_PROFILE "-pg -g")
-#add_definitions("-g")
+#set(CMAKE_BUILD_TYPE Profile)
+#set(CMAKE_CXX_FLAGS_PROFILE "-pg -g")
 
 cmake_minimum_required(VERSION 3.17)
 
 add_subdirectory(${SDL})
+add_subdirectory(third_part/assimp-3.3.1)
 
 include_directories(
 	src 
 	${SDL}/include
 	${STB}
+    third_part/assimp-3.3.1/include
 	)
 
 
@@ -35,10 +36,10 @@ if (COMMAND cmake_policy)
 endif (COMMAND cmake_policy)
 
 
-add_definitions("-g -O3 -flto -ffast-math -static-libstdc++")
+add_definitions("-g -O3 -flto -ffast-math")
 
 add_executable(app src/main.cpp)
-target_link_libraries(app sgl sgl_debug sgl_math mingw32 SDL2main SDL2-static sgl_model)
+target_link_libraries(app sgl sgl_debug sgl_math mingw32 SDL2main SDL2-static sgl_model assimp)
 
 
 #tests

@@ -9,7 +9,8 @@ void ModelShader::onFragment(const V2f & v, Vec4f & color)
 	Vec4f ambientColor;
 	if (material->ambientMap) {
 		ambientColor = material->ambientMap->sample(v.uv.u, v.uv.v);
-	}
+	}else {
+    }
 	//散射
 	Vec3f diffuseColor;
 	for (auto & dlight : parallelLights) {

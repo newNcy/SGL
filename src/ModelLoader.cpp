@@ -174,7 +174,7 @@ std::shared_ptr<Model> OBJLoader::load(const char * path)
 					v.uv = uvs[makeidx(stoi(idxs[1]), uvs)];
 				}
 				if (idxs.size() > 2) {
-					v.norm = norms[makeidx(stoi(idxs[2]), norms)];
+					v.normal = norms[makeidx(stoi(idxs[2]), norms)];
 				}
 				mesh->verties.push_back(v);
 			}
@@ -201,3 +201,5 @@ std::shared_ptr<Model> OBJLoader::load(const char * path)
 	}
 	return model;
 }
+
+

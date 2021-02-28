@@ -30,6 +30,8 @@ int main(int argc, char * argv[])
 	auto loader = std::make_shared<OBJLoader>();
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
 	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
+    SkinnedModel nano;
+    nano.load("../resource/model/vikingroom/vikingroom.obj");
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
 	int dis = (nanosuit->boundingBox.max.y - nanosuit->boundingBox.min.y)/2;
@@ -53,7 +55,12 @@ int main(int argc, char * argv[])
 	float ang = 0;
 	float lastfps = 0;
 
-	pipeline.useShader(modelShader);
+    auto animationShader = std::make_shared<AnimationShader>();
+	animationShader->parallelLights["sun"] = 
+	{
+		{0, 0, 1},
+		{1.f, 1.f, 1.f}
+	};
 	//增加阳光
 	modelShader->parallelLights["sun"] = 
 	{
@@ -82,6 +89,7 @@ int main(int argc, char * argv[])
     };
 
     bool r = true;
+
 	while (!quit) {
 		{
 			PROFILE(frame);
@@ -90,16 +98,36 @@ int main(int argc, char * argv[])
 				pipeline.clearColor(.1f, .1f, .1f);
 				pipeline.clearDepth(1.f);
 
+                //draw axis
 				colorShader->setCamera(view);
+                pipeline.useShader(colorShader);
+                pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
+
+                //draw model
+                Mat4f model;
+                animationShader->setCamera(view);
+                animationShader->setModel(model);
+                pipeline.useShader(animationShader);
+                for (auto & mesh : nano.meshes) {
+					animationShader->setMaterial(mesh.material);
+					pipeline.drawElements(mesh.vertices.data(), sizeof(SkinnedVertex), mesh.vertices.size(), mesh.indices.data(), mesh.indices.size(), DrawMode::TRIANGLE);	
+                }
+                
+                model = rotate(0, int(180 + ang)%360, 0) * moveto(-10, 0,0);
+                modelShader->setModel(model);
 				modelShader->setCamera(view);
+                pipeline.useShader(modelShader);
+				for (auto & mesh : nanosuit->meshs) {
+					//Profiler _(mesh->name.c_str());
+					modelShader->setMaterial(mesh->material);
+					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), DrawMode::TRIANGLE);	
+				}
+                /*
 				
                 Mat4f model;
 				colorShader->setModel(model);
                 pipeline.useShader(colorShader);
-                pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
-                if (r) {
-                    ang += 4;
-                }
+
 
                 model = rotate(0, int(180 + ang)%360, 0) * moveto(-5, 0,0);
                 modelShader->setModel(model);
@@ -107,7 +135,7 @@ int main(int argc, char * argv[])
 				for (auto & mesh : nanosuit->meshs) {
 					//Profiler _(mesh->name.c_str());
 					modelShader->setMaterial(mesh->material);
-					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), mode);	
+					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), DrawMode::TRIANGLE);	
 				}
 				colorShader->setModel(model);
                 pipeline.useShader(colorShader);
@@ -123,6 +151,7 @@ int main(int argc, char * argv[])
                 }
 				colorShader->setModel(model);
                 debug.drawBoundingBox(pipeline, vikingroom->boundingBox, colorShader); 
+                */
 			}
 
 			SDL_Event event;
@@ -189,7 +218,11 @@ int main(int argc, char * argv[])
 			lastTime = current;
 			long ms = use.count() / 1000000;
 			useTime += ms;
-		}
+
+            if (r) {
+                ang += ms * 30 * 0.001;
+            }
+        }
 		if (useTime >= 1000) {
 			lastfps = frameCount/(useTime*0.001);
 			useTime = 0;

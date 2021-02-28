@@ -165,6 +165,7 @@ Vec4<T> operator * (const Vec4<T> & vec, const Mat4<T> & mat)
 using Vec2i = Vec2<int>;
 using Vec2f = Vec2<float>;
 using Vec3i = Vec3<int>;
+using Vec4i = Vec4<int>;
 using Vec3f = Vec3<float>;
 using Vec4f = Vec4<float>;
 using Mat4f = Mat4<float>;

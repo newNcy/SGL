@@ -62,7 +62,7 @@ void SGLContext::swapBuffer(const FrameBuffer & buffer)
 			}
 		}
 		SDL_UpdateTexture(renderBuffer, nullptr, rgba8888, buffer.getWidth()*4);
-		SDL_RenderClear(renderer);
+		//SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, renderBuffer, nullptr, nullptr);
 		SDL_RenderPresent(renderer);
 	}

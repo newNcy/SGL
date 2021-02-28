@@ -20,27 +20,34 @@ int main ()
 		{0, -1, 0, 1}
 	};
 
-	Mat4f combine = movex * movey;
-	printf("translate combine");
-	print(combine);
-	Vec4f pos = {2, 3, 4, 1};
-	print(pos, 4);
 	//令人巴适的行向量
 
 	//透视矩阵
-	printf("project");
-	auto proj = perspective(90, 1, 0.1f, 1000.f);
+	auto proj = perspective(90, 1, 1.f, 10.f);
 	print(proj);
 
-	Vec4f pos2 = {2.5,2.5,2.5, 1};
-	print(pos2, 4);
-	auto prop = pos2 * proj;
-	print(prop, 4);
-	print(prop/prop.w, 4);
-	printf("glm\n");
+    printf("project test\n");
+    Vec4f pos = {0, 0, 2, 1};
+    pos = pos * proj;
+    print(pos, 4);
+    pos.x /= pos.w;
+    pos.y /= pos.w;
+    pos.z /= pos.w;
+    print(pos, 4);
+    printf("end\n");
+
+    printf("view test\n");
 	Vec3f at(0, 0, -1);
-	Vec3f up(0, 1, 1);
+	Vec3f up(0, 1, 0);
 	Vec3f to(0, 0, 0);
+    auto view = lookat(at, to, up);
+    pos = {0, 0, 2, 1};
+    pos = pos * view;
+    print(pos, 4);
+    printf("end\n");
+
+    printf("math %.2f\n", radians(180.f));
+
 
 	auto front = normalize(to-at);
 	auto right = normalize(cross(up, front));

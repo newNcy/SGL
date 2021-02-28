@@ -60,7 +60,7 @@ class NormalShader : public SGLShader
 			PROFILE(vertex_shader);
 			out.position = Vec4f(vert.position,1) * model * view * projection;
 			auto worldPos = Vec4f(vert.position, 1) * model;
-			auto worldNorm = Vec4f(vert.norm, 1) * normalMatrix;
+			auto worldNorm = Vec4f(vert.normal, 1) * normalMatrix;
 			out.worldPosition = Vec3f(worldPos.x, worldPos.y, worldPos.z);
 			out.norm = Vec3f(worldNorm.x, worldNorm.y, worldNorm.z);
 		}
@@ -113,4 +113,8 @@ class ModelShader : public NormalShader
 		}
 		void onFragment(const V2f & v, Vec4f & color) override;
 
+};
+
+class AnimationShader : public ModelShader 
+{
 };

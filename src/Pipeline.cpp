@@ -326,6 +326,22 @@ void SGLPipeline::writeFragment(int x, int y, float depth, const Vec4f & color)
     currentFrame->setPixel(x, y, color);
 }
 
+void SGLPipeline::drawPoint(const V2f & point)
+{
+    if (!inside(point)) {
+        return;
+    }
+
+    auto dp = point.position/point.position.w;
+    auto sp = viewPortTrans(dp);
+    float depth = dp.z;
+    if (testDepth(sp.x, sp.y, depth)) {
+        Vec4f color;
+        shader->onFragment(point, color);
+        writeFragment(sp.x, sp.y, depth, color);
+    }
+}
+
 void SGLPipeline::drawLine(std::vector<V2f> & points)
 {
     std::vector<V2f> clips = SutherlandHodgeman(points, 2);
@@ -484,49 +500,62 @@ void SGLPipeline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
         out.position = v.position;
         out.color = v.color;
         out.uv = v.uv;
-        out.norm = v.norm;
+        out.norm = v.normal;
         shader->onVertex(v, out);
-        points.push_back(out);
 
-        if ( drawMode == DrawMode::TRIANGLE && points.size() == 3) {
-            //背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps)
-            drawTriangle0(points);
-            points.clear();
-        }else if (drawMode == DrawMode::LINE && points.size() == 2) {
-            drawLine(points);
-            points.clear();
+        if (drawMode == DrawMode::POINT) {
+            drawPoint(out);
+        } else {
+            points.push_back(out);
+            if ( drawMode == DrawMode::TRIANGLE && points.size() == 3) {
+                //背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps, 去掉控制台打印的信息破笔记本能上3,40)
+                drawTriangle0(points);
+                points.clear();
+            }else if (drawMode == DrawMode::LINE && points.size() == 2) {
+                drawLine(points);
+                points.clear();
+            }
         }
+
     }
 }
 
-void SGLPipeline::drawElements(const Vertex * verties, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
+void SGLPipeline::drawElements(const void * verties, uint32_t stride, size_t count, unsigned int * indices, size_t indiesCount, DrawMode drawMode)
 {
     if (!verties || !indices || !currentFrame || !shader) return;
-
+    
     std::vector<V2f> points;
-    for (int i = 0; i < indiesCount; ++ i) {
-        Vertex v = verties[indices[i]];
+    for (int i = 0; i < count; ++i) {
+        Vertex * vp = (Vertex*)((char*)verties + stride*i);
         V2f out;
-        out.position = v.position;
-        out.color = v.color;
-        out.uv = v.uv;
-        out.norm = v.norm;
-        shader->onVertex(v, out);
+        out.position = vp->position;
+        out.color = vp->color;
+        out.uv = vp->uv;
+        out.norm = vp->normal;
+        shader->onVertex(*vp, out);
         points.push_back(out);
-
-        if (points.size() == 3) {
-            std::vector<V2f> clips = SutherlandHodgeman(points, 3);
-            if (clips.size()) {
-
-                int last = 1;
-                while (last < clips.size() - 1) {
-                    drawTriangle(clips[0], clips[last], clips[last+1]);
-                    last ++;
-                }
-            }
-            points.clear();
-        }
     }
 
+    for (int i = 0; i < indiesCount; ++i) {
+        if (drawMode == DrawMode::POINT) {
+            drawPoint(points[indices[i]]);
+        } else {
+            if ( drawMode == DrawMode::TRIANGLE && (i+1)%3 == 0) {
+                //背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps, 去掉控制台打印的信息破笔记本能上3,40)
+                std::vector<V2f> temp = {
+                    points[indices[i-2]], 
+                    points[indices[i-1]], 
+                    points[indices[i]], 
+                };
+                drawTriangle0(temp);
+            }else if (drawMode == DrawMode::LINE && (i+1)%2 == 0) {
+                std::vector<V2f> temp = {
+                    points[indices[i-1]], 
+                    points[indices[i]], 
+                };
+                drawLine(temp);
+            }
+        }
+    }
 }
 
