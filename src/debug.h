@@ -10,6 +10,7 @@
 
 class SGLPipeline;
 class SGLShader;
+class NormalShader;
 struct ProfileEntry
 {
 	std::string tag;
@@ -122,4 +123,5 @@ class DebugRenderer
     public:
         DebugRenderer();
         void drawBoundingBox(SGLPipeline & pipeline, const BoundingBox3d & box, std::shared_ptr<SGLShader> shader);
+        void drawSkeleton(SGLPipeline & pipeline, const Skeleton & sk, std::shared_ptr<NormalShader> shader);
 };

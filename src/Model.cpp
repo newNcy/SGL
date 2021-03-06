@@ -29,6 +29,12 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
         return ret;
     }
 
+    uint32_t baseIdx = 0;
+    for (auto & m : meshes){
+        baseIdx += m.vertices.size();
+    }
+
+    bool firstPos = true;
     for (int i = 0; i < mesh->mNumVertices; ++ i) {
         SkinnedVertex vertex;
         if (!mesh->mVertices) {
@@ -37,6 +43,31 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
         vertex.position.x = mesh->mVertices[i].x;
         vertex.position.y = mesh->mVertices[i].y;
         vertex.position.z = mesh->mVertices[i].z;
+        if (firstPos) {
+            firstPos = false;
+            boundingBox.min = vertex.position;
+            boundingBox.max = vertex.position;
+        }else {
+            if (vertex.position.x < boundingBox.min.x) {
+                boundingBox.min.x = vertex.position.x - 0.02;
+            }
+            if (vertex.position.y < boundingBox.min.y) {
+                boundingBox.min.y = vertex.position.y - 0.02;
+            }
+            if (vertex.position.z < boundingBox.min.z) {
+                boundingBox.min.z = vertex.position.z - 0.02;
+            }
+
+            if (vertex.position.x > boundingBox.max.x) {
+                boundingBox.max.x = vertex.position.x + 0.02;
+            }
+            if (vertex.position.y > boundingBox.max.y) {
+                boundingBox.max.y = vertex.position.y + 0.02;
+            }
+            if (vertex.position.z > boundingBox.max.z) {
+                boundingBox.max.z = vertex.position.z + 0.02;
+            }
+        }
         if (mesh->mNormals) {
             vertex.normal.x = mesh->mNormals[i].x;
             vertex.normal.y = mesh->mNormals[i].y;
@@ -60,9 +91,39 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
         }
     }
 
+    //load bones
+    printf("-------------------------------\n");
+    for (int i = 0 ; i < mesh->mNumBones; ++ i) {
+        auto bone = mesh->mBones[i];
+        auto iter = skeleton.boneIDMap.find(bone->mName.data);
+        uint32_t boneID;
+        if (iter == skeleton.boneIDMap.end()) {
+            Bone b;
+            b.name = bone->mName.data;
+
+            auto inverse = bone->mOffsetMatrix.Inverse();
+            for (int j = 0; j < 4; ++ j) {
+                for (int k = 0; k < 4; ++ k) {
+                    b.offset[j][k] = inverse[j][k];
+                }
+            }
+            boneID = skeleton.boneIDMap[b.name] = skeleton.bones.size();
+            skeleton.bones.push_back(b);
+        }else{
+            boneID = iter->second;
+        }
+        printf("bone:%s \n", bone->mName.data);
+
+        for (int i = 0 ; i < bone->mNumWeights; ++i) {
+            auto & weight = bone->mWeights[i];
+            ret.vertices[weight.mVertexId].bindToBone(boneID, weight.mWeight);
+        }
+    }
+    printf("-------------------------------\n");
+
     if (mesh->mMaterialIndex >= 0) {
         ret.material = std::make_shared<Material>();
-		aiMaterial * material = scene->mMaterials[mesh->mMaterialIndex];
+        aiMaterial * material = scene->mMaterials[mesh->mMaterialIndex];
 
         auto tryGetTexture = [=](decltype(aiTextureType_AMBIENT) type, std::shared_ptr<Texture> & out) {
             if (material->GetTextureCount(type) > 0) {
@@ -83,6 +144,7 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
 
 void SkinnedModel::processNode(aiNode * node, const aiScene * scene)
 {
+    printf("------------------------%s-----------------------<\n", node->mName.C_Str());
     for (int i = 0 ; i < node->mNumMeshes; i++) {
         aiMesh * m = scene->mMeshes[node->mMeshes[i]];
         meshes.push_back(loadMesh(m, scene));
@@ -91,6 +153,7 @@ void SkinnedModel::processNode(aiNode * node, const aiScene * scene)
     for (int i = 0; i < node->mNumChildren; i++) {
         processNode(node->mChildren[i], scene);
     }
+    printf("------------------------%s----------------------->\n", node->mName.C_Str());
 }
 
 bool SkinnedModel::load(const std::string & path)

@@ -11,8 +11,18 @@ struct Vertex
 
 struct SkinnedVertex : public Vertex
 {
-    Vec4i boneId;
+    Vec4i boneId = {-1, -1, -1, -1};
     Vec4f weights;
+    void bindToBone(uint32_t idx, float weight)
+    {
+        for (int i = 0 ; i < 4; ++ i) {
+            if (weights[i] == 0.0) {
+                boneId[i] = idx;
+                weights[i] = weight;
+                return;
+            }
+        }
+    }
 };
 
 

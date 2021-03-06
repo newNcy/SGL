@@ -45,3 +45,17 @@ void DebugRenderer::drawBoundingBox(SGLPipeline & pipeline, const BoundingBox3d 
     pipeline.useShader(shader);
     pipeline.drawArray(&edges[0], edges.size(), DrawMode::LINE);
 }
+
+void DebugRenderer::drawSkeleton(SGLPipeline & pipeline, const Skeleton & sk, std::shared_ptr<NormalShader> shader)
+{
+
+    pipeline.useShader(shader);
+    Vertex v = {{0, 0, 0}, {0.6, 0.6, 0.6}};
+    for (auto & bone : sk.bones) {
+        auto pos = Vec4f(0,0,0,1) * bone.offset;
+        //printf("bone %s pos (%.2f, %.2f %.2f)\n", bone.name.c_str(), pos.x, pos.y, pos.z);
+
+        shader->setModel(bone.offset);
+        pipeline.drawArray(&v, 1, DrawMode::POINT);
+    }
+}

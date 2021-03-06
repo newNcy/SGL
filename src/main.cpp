@@ -30,15 +30,15 @@ int main(int argc, char * argv[])
 	auto loader = std::make_shared<OBJLoader>();
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
 	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
-    SkinnedModel nano;
-    nano.load("../resource/model/vikingroom/vikingroom.obj");
+    SkinnedModel robot;
+    robot.load("../resource/model/robot/robot.fbx");
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
-	int dis = (nanosuit->boundingBox.max.y - nanosuit->boundingBox.min.y)/2;
+	int dis = (robot.boundingBox.max.y - robot.boundingBox.min.y)/2;
 	//第一个
-	Vec3f campos(0, dis, -dis*2.5);
+	Vec3f campos(0, dis, dis*4);
 	Vec3f up(0, 1, 0);
-	Vec3f lookDir(0, 0, 1);
+	Vec3f lookDir(0, 0, -1);
 	float yaw = 0.f, pitch = 0.f;
 	auto view = lookat(campos, campos + lookDir, up);
 
@@ -58,13 +58,13 @@ int main(int argc, char * argv[])
     auto animationShader = std::make_shared<AnimationShader>();
 	animationShader->parallelLights["sun"] = 
 	{
-		{0, 0, 1},
+		{0, 0, -1},
 		{1.f, 1.f, 1.f}
 	};
 	//增加阳光
 	modelShader->parallelLights["sun"] = 
 	{
-		{0, 0, 1},
+		{0, 0, -1},
 		{1.f, 1.f, 1.f}
 	};
 	
@@ -100,9 +100,19 @@ int main(int argc, char * argv[])
 
                 //draw axis
 				colorShader->setCamera(view);
+				colorShader->setModel(Mat4f());
                 pipeline.useShader(colorShader);
                 pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
 
+                Mat4f model;
+                animationShader->setCamera(view);
+                debug.drawSkeleton(pipeline, robot.skeleton, colorShader); 
+                for (auto & mesh : robot.meshes) {
+					animationShader->setMaterial(mesh.material);
+                    pipeline.useShader(animationShader);
+					pipeline.drawElements(mesh.vertices.data(), sizeof(SkinnedVertex), mesh.vertices.size(), mesh.indices.data(), mesh.indices.size(), DrawMode::TRIANGLE);	
+                }
+                /*
                 //draw model
                 Mat4f model;
                 animationShader->setCamera(view);
@@ -122,7 +132,6 @@ int main(int argc, char * argv[])
 					modelShader->setMaterial(mesh->material);
 					pipeline.drawArray(&mesh->verties[0], mesh->verties.size(), DrawMode::TRIANGLE);	
 				}
-                /*
 				
                 Mat4f model;
 				colorShader->setModel(model);
@@ -167,7 +176,7 @@ int main(int argc, char * argv[])
 						float py = event.motion.yrel;
 						//printf("x:%f y:%f\n", px, py);
 						float sense = 0.05f;
-						yaw += px*sense;
+						yaw += -px*sense;
 						pitch += -py*sense;
 						if (pitch > 89.99999) {
 							pitch = 89.99999;
@@ -176,9 +185,9 @@ int main(int argc, char * argv[])
 							pitch = -89.99999;
 						}
 
-						lookDir.x = cos(radians(pitch)) * sin(radians(yaw));
+						lookDir.x = cos(radians(pitch)) * -sin(radians(yaw));
 						lookDir.y = sin(radians(pitch));
-						lookDir.z = cos(radians(pitch)) * cos(radians(yaw));
+						lookDir.z = cos(radians(pitch)) * -cos(radians(yaw));
 
 						lookDir = normalize(lookDir);
 						//fflush(stdout);
@@ -187,7 +196,7 @@ int main(int argc, char * argv[])
 						float moveSpeed = 1;
 						switch (key) {
 							case 'a':
-								campos = campos + normalize(cross(lookDir, up))*moveSpeed;
+								campos = campos + normalize(cross(up, lookDir))*moveSpeed;
 								break;
 							case 's':
 								campos = campos - lookDir * moveSpeed;
@@ -196,7 +205,7 @@ int main(int argc, char * argv[])
 								campos = campos + lookDir * moveSpeed;
 								break;
 							case 'd':
-								campos = campos + normalize(cross(up, lookDir));
+								campos = campos + normalize(cross(lookDir, up));
 								break;
                             case SDLK_ESCAPE:
                                 quit = true;

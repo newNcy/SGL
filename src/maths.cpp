@@ -4,15 +4,15 @@
 
 Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 {
-	auto front = normalize(target - pos);
-	auto right = normalize(cross(up, front));
-	auto camup = normalize(cross(front, right));
+	auto z = normalize(pos - target);
+	auto x = normalize(cross(up, z));
+	auto y = normalize(cross(z, x));
 
 	Mat4f view = 
 	{
-		Vec4f(right, 0),
-		Vec4f(camup, 0),
-		Vec4f(front, 0),
+		Vec4f(x, 0),
+		Vec4f(y, 0),
+		Vec4f(z, 0),
 		Vec4f(0, 0, 0, 1)
 	};
 	//在还是正交阵的时候转置取逆
@@ -35,10 +35,10 @@ Mat4f perspective(float fov,float aspect, float n, float f)
 	float w = h*aspect;
 	Mat4f projection = 
 	{
-		{2*n/w, 0,			0,				0},
-		{0,		2*n/h,		0,				0},
+		{-2*n/w, 0,			0,				0},
+		{0,		-2*n/h,		0,				0},
 		{0,		0,			(f+n)/(f-n),	1},
-		{0,		0,			-2*f*n/(f-n),	0},
+		{0,		0,			2*f*n/(f-n),	0},
 	};
 	return projection;
 }

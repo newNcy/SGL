@@ -249,7 +249,7 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 
             float da = dot(in[0].position, plane);
             float db = dot(in[1].position, plane);
-            int code = ((da >= 0.001) <<1)| (db >= 0.001);
+            int code = ((da < 0.0) <<1)| (db < 0.0);
             //无论怎么样每次都产生两个否则就剔除了
             if (code == 3) {
                 std::swap(in, out);
@@ -281,7 +281,7 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
                 i = 0;
             }
             float di = dot(in[i].position, plane);
-            int code = (di >= 0.001) | ((pred >= 0.001)<<1);
+            int code = (di < 0.0) | ((pred < 0.0)<<1);
             switch(code) {
                 case 0: //都不在
                     break;

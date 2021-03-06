@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <memory>
 #include "global.h"
 
@@ -58,6 +59,20 @@ struct Model
 	std::vector<std::shared_ptr<Mesh>> meshs;
 };
 
+
+struct Bone
+{
+    std::string name;
+    uint32_t parent;
+    Mat4f offset;
+};
+
+struct Skeleton
+{
+    std::vector<Bone> bones;
+    std::unordered_map<std::string, uint32_t> boneIDMap; 
+};
+
 struct SkinnedMesh
 {
     std::vector<SkinnedVertex> vertices;
@@ -68,11 +83,16 @@ struct SkinnedMesh
 struct SkinnedModel
 {
     std::string path;
+    Skeleton skeleton;
 	BoundingBox3d boundingBox;
 	std::vector<SkinnedMesh> meshes;
     void processNode(aiNode * node, const aiScene * scene);
     SkinnedMesh loadMesh(aiMesh * mesh, const aiScene * scene);
     bool load(const std::string & path);
+};
+
+struct Animation
+{
 };
 
 
