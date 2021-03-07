@@ -67,9 +67,17 @@ struct Bone
     Mat4f offset;
 };
 
+struct SkeletonNode
+{
+    std::string name;
+    Mat4f transform;
+    std::shared_ptr<SkeletonNode> parent;
+    std::vector<std::shared_ptr<SkeletonNode>> childs;
+};
 struct Skeleton
 {
     std::vector<Bone> bones;
+    std::shared_ptr<SkeletonNode> root;
     std::unordered_map<std::string, uint32_t> boneIDMap; 
 };
 
@@ -86,13 +94,51 @@ struct SkinnedModel
     Skeleton skeleton;
 	BoundingBox3d boundingBox;
 	std::vector<SkinnedMesh> meshes;
-    void processNode(aiNode * node, const aiScene * scene);
+    std::shared_ptr<SkeletonNode> processNode(aiNode * node, const aiScene * scene);
     SkinnedMesh loadMesh(aiMesh * mesh, const aiScene * scene);
     bool load(const std::string & path);
 };
 
+template <typename T>
+struct AnimationKey
+{
+    double time;
+    T value;
+};
+
+struct AnimationChannel
+{
+    std::vector<AnimationKey<Vec3f>> positionKeys;
+    std::vector<AnimationKey<Vec3f>> scalingKeys;
+    std::vector<AnimationKey<Quat>> rotationKeys;
+};
+
+struct Pose 
+{
+    Vec3f translate;
+    Vec3f scale;
+    Quat rotation;
+};
+
+struct Frame 
+{
+    std::unordered_map<std::string, Pose> jointPoses;
+};
+
 struct Animation
 {
+    double duration;
+    double ticksPerSecond;
+    std::unordered_map<std::string, AnimationChannel> animationChannels;
+    Frame getFrame(double sec);
 };
+
+struct AnimationSet
+{
+    std::unordered_map<std::string, Animation> animations;
+    bool load(const std::string & path);
+};
+
+
 
 

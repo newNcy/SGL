@@ -77,6 +77,33 @@ struct Vec4
 };
 
 template <typename T>
+struct Quaternion
+{
+	using Type = Vec4<T>;
+	using Etype = T;
+	union 
+	{
+		struct { T x,y,z,w; };
+		struct { T r,g,b,a = 1; };
+		T data[4];
+	};
+	Quaternion():x(0), y(0),z(0),w(0) {}
+	Quaternion(T x, T y, T z, T w):x(x), y(y), z(z),w(w) {}
+	Quaternion(const Vec3<T> & v3, T w = 0):x(v3.x), y(v3.y),z(v3.z),w(w) {}
+
+	Type operator + (const Type & rhs) const { return Type(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w); }
+	Type operator - (const Type & rhs) const { return Type(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w); }
+	Type operator * (float f) const { return Type(x*f, y*f, z*f, w*f); }
+	Type operator * (const Type & rhs) const { return Type(x*rhs.x, y*rhs.y, z*rhs.z, w*rhs.w); }
+	Type operator / (float f) const { return Type(x/f, y/f, z/f, w/f); }
+	T & operator [] (unsigned int index) { assert(index < 4); return data[index];}
+	//T operator * (const Type & rhs) const { return x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w; }
+	const T & operator [] (unsigned int index) const { assert(index < 4); return data[index];}
+};
+
+
+
+template <typename T>
 struct Mat4
 {
 	using Vec4 = Vec4<T>;
@@ -169,6 +196,7 @@ using Vec4i = Vec4<int>;
 using Vec3f = Vec3<float>;
 using Vec4f = Vec4<float>;
 using Mat4f = Mat4<float>;
+using Quat = Quaternion<float>;
 
 const static float pi = 3.1415926;
 inline float radians(float an) { return an/180*pi; }
@@ -191,45 +219,5 @@ T transpose(const T & t, int d)
 	return ret;
 }
 
-
-template <typename T>
-T inverse(const T & m, int d)
-{
-	printf("%s\n", __PRETTY_FUNCTION__);
-	typename T::Etype det = 0;
-	/*
-	det += m[0][0]*( m[1][1]*m[2][2]*m[3][3] + m[1][2]*m[2][3]*m[3][1] + m[1][3]*m[2][1]*m[3][2] -m[1][1]*m[2][3]*m[3][2]-m[1][2]*m[2][1]*m[3][3] - m[1][3]*m[2][2]*m[3][1]);
-	det -= m[0][1]*( m[1][0]*m[2][2]*m[3][3] + m[1][2]*m[2][3]*m[3][0] + m[1][3]*m[2][0]*m[3][2] -m[1][0]*m[2][3]*m[3][2]-m[1][2]*m[2][2]*m[3][0] - m[1][3]*m[2][0]*m[3][3]);
-	det += m[0][2]*( m[1][0]*m[2][1]*m[3][3] + m[1][1]*m[2][3]*m[3][0] + m[1][3]*m[2][0]*m[3][1] -m[1][0]*m[2][3]*m[3][1]-m[1][1]*m[2][0]*m[3][3] - m[1][3]*m[2][1]*m[3][0]);
-	det -= m[0][3]*( m[1][0]*m[2][1]*m[3][2] + m[1][1]*m[2][2]*m[3][0] + m[1][2]*m[2][0]*m[3][1] -m[1][0]*m[2][2]*m[3][1]-m[1][1]*m[2][0]*m[3][2] - m[1][2]*m[2][1]*m[3][0]);
-	*/
-	int s = 1;
-	for (int i = 0; i < d; ++i) {
-		//求代数余子式
-		typename T::Etype c1i = 0;
-		for (int c = 1; c < d; ++ c) {
-			typename T::Etype add = 1;
-			typename T::Etype sub = 1;
-			for (int r = 1; r < d; ++ r) {
-				int ca = (c+r-1 + i)%d;
-				int cs = (c-r-i+d)%d;
-				if (ca == i) ++ ca;
-				if (cs == i) cs = (cs-1+d)%d;
-				printf("+ %d:%d - %d:%d ",r, ca, r, cs);
-				//add *= m[r][ca];
-				//sub *= m[r][cs];
-			}
-			c1i += add - sub; 
-			printf("\n");
-		}
-		printf("\n");
-		det += s * m[0][i] * c1i;
-		s = -1;
-	}
-	printf("det :%f\n", det);
-
-	float det2 = 0;
-	return m;
-}
-
+Mat4f inverse(const Mat4f & m);
 

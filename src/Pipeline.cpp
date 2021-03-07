@@ -209,21 +209,7 @@ bool inside(const V2f & v)
 std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 {
     PROFILE(SutherlandHodgeman);
-    if (out.size() < 2) {
-        return std::move(out);
-    }
-    
     std::vector<V2f> in;
-
-    bool allInside = true;
-    for (int i = 0; i < count; ++ i) {
-        bool iin = inside(out[i]);
-        allInside &= iin;
-    }
-
-    if (allInside) {
-        return out;
-    }
 
     const std::vector<Vec4f> planes = 
     {
@@ -238,6 +224,15 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
 
     int idx = 0;
 
+    if (count == 1) {
+        for (auto & plane : planes) {
+            float d = dot(out[0].position, plane);
+            if (d >= 0) {
+                return in;
+            }
+        }
+        return out;
+    }
     //线段不是封闭图形，做一次裁剪就行
     if (count == 2) {
         for (auto & plane : planes) {
@@ -328,16 +323,18 @@ void SGLPipeline::writeFragment(int x, int y, float depth, const Vec4f & color)
 
 void SGLPipeline::drawPoint(const V2f & point)
 {
-    if (!inside(point)) {
+    std::vector<V2f> in = {point};
+    auto res = SutherlandHodgeman(in, 1);
+    if (res.empty()) {
         return;
     }
-
-    auto dp = point.position/point.position.w;
+    
+    auto dp = res[0].position/res[0].position.w;
     auto sp = viewPortTrans(dp);
     float depth = dp.z;
-    if (testDepth(sp.x, sp.y, depth)) {
+    if (true or testDepth(sp.x, sp.y, depth)) {
         Vec4f color;
-        shader->onFragment(point, color);
+        shader->onFragment(res[0], color);
         writeFragment(sp.x, sp.y, depth, color);
     }
 }
@@ -508,7 +505,6 @@ void SGLPipeline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
         } else {
             points.push_back(out);
             if ( drawMode == DrawMode::TRIANGLE && points.size() == 3) {
-                //背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps, 去掉控制台打印的信息破笔记本能上3,40)
                 drawTriangle0(points);
                 points.clear();
             }else if (drawMode == DrawMode::LINE && points.size() == 2) {
@@ -541,7 +537,6 @@ void SGLPipeline::drawElements(const void * verties, uint32_t stride, size_t cou
             drawPoint(points[indices[i]]);
         } else {
             if ( drawMode == DrawMode::TRIANGLE && (i+1)%3 == 0) {
-                //背面剔除下，不然都裁剪太离谱了，卡得一笔 (2070s下 6fps->12fps, 去掉控制台打印的信息破笔记本能上3,40)
                 std::vector<V2f> temp = {
                     points[indices[i-2]], 
                     points[indices[i-1]], 

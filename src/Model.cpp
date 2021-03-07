@@ -5,11 +5,14 @@
 Texture::Texture(const char * path)
 {
 	data = stbi_load(path, &width, &height, &n, 0);
-	assert(data);
+	//assert(data);
 }
 
 Vec4f Texture::sample(float u, float v)
 {
+    if (!data) {
+        return Vec4f(1.f, 1.f, 1.f, 1.f);
+    }
 	int x = u*(width-1);
 	int y = (1-v)*(height-1);
 	unsigned char * p = data + y*n*width + x*n;
@@ -20,6 +23,27 @@ Vec4f Texture::sample(float u, float v)
 Texture::~Texture()
 {
 	stbi_image_free(data);
+}
+
+Vec3f readVec3f(const aiVector3D & vec3)
+{
+    return Vec3f(vec3.x, vec3.y, vec3.z);
+}
+
+Quat readQuat(const aiQuaternion & quat)
+{
+    return {quat.x, quat.y, quat.z, quat.w};
+}
+
+Mat4f readMat4f(const aiMatrix4x4t<float> & matrix)
+{
+    Mat4f ret;
+    for (int j = 0; j < 4; ++ j) {
+        for (int k = 0; k < 4; ++ k) {
+            ret[j][k] = matrix[j][k];
+        }
+    }
+    return ret;
 }
 
 SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
@@ -92,7 +116,6 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
     }
 
     //load bones
-    printf("-------------------------------\n");
     for (int i = 0 ; i < mesh->mNumBones; ++ i) {
         auto bone = mesh->mBones[i];
         auto iter = skeleton.boneIDMap.find(bone->mName.data);
@@ -102,24 +125,18 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
             b.name = bone->mName.data;
 
             auto inverse = bone->mOffsetMatrix.Inverse();
-            for (int j = 0; j < 4; ++ j) {
-                for (int k = 0; k < 4; ++ k) {
-                    b.offset[j][k] = inverse[j][k];
-                }
-            }
+            b.offset = readMat4f(inverse);
             boneID = skeleton.boneIDMap[b.name] = skeleton.bones.size();
             skeleton.bones.push_back(b);
         }else{
             boneID = iter->second;
         }
-        printf("bone:%s \n", bone->mName.data);
 
         for (int i = 0 ; i < bone->mNumWeights; ++i) {
             auto & weight = bone->mWeights[i];
             ret.vertices[weight.mVertexId].bindToBone(boneID, weight.mWeight);
         }
     }
-    printf("-------------------------------\n");
 
     if (mesh->mMaterialIndex >= 0) {
         ret.material = std::make_shared<Material>();
@@ -142,18 +159,22 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
     return ret;
 }
 
-void SkinnedModel::processNode(aiNode * node, const aiScene * scene)
+std::shared_ptr<SkeletonNode>SkinnedModel::processNode(aiNode * node, const aiScene * scene)
 {
-    printf("------------------------%s-----------------------<\n", node->mName.C_Str());
+    auto currentNode = std::make_shared<SkeletonNode>();
+    currentNode->name = node->mName.C_Str();
+    currentNode->transform = readMat4f(node->mTransformation);
     for (int i = 0 ; i < node->mNumMeshes; i++) {
         aiMesh * m = scene->mMeshes[node->mMeshes[i]];
         meshes.push_back(loadMesh(m, scene));
     }
 
     for (int i = 0; i < node->mNumChildren; i++) {
-        processNode(node->mChildren[i], scene);
+        auto child = processNode(node->mChildren[i], scene);
+        child->parent = currentNode;
+        currentNode->childs.push_back(child);
     }
-    printf("------------------------%s----------------------->\n", node->mName.C_Str());
+    return currentNode;
 }
 
 bool SkinnedModel::load(const std::string & path)
@@ -162,7 +183,78 @@ bool SkinnedModel::load(const std::string & path)
     const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 
     this->path = std::string(path).substr(0, path.find_last_of('/'));
-    processNode(pScene->mRootNode, pScene);
+    skeleton.root = processNode(pScene->mRootNode, pScene);
     assert(pScene && "resource not found");
+    return true;
+}
+
+Frame Animation::getFrame(double sec)
+{
+    Frame frame;
+    sec = fmod(sec, duration);
+    for (auto & channel : animationChannels) {
+        auto & pose = frame.jointPoses[channel.first];
+        auto & c = channel.second;
+        for (int i = 0; i < c.positionKeys.size()-1; ++i) {
+            auto & a = c.positionKeys[i];
+            auto & b = c.positionKeys[i+1];
+            if (a.time <= sec && sec < b.time) {
+                double t = (sec - a.time) / (b.time - a.time);
+                pose.translate = a.value * (1-t) + b.value * t;
+            }
+        }
+    }
+
+    return frame;
+}
+
+bool AnimationSet::load(const std::string & path)
+{
+    Assimp::Importer Importer;
+    const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    printf("%d animations\n", pScene->mNumAnimations);
+    for (int i = 0 ; i < pScene->mNumAnimations; ++i) {
+        auto anim = pScene->mAnimations[i];
+        auto & animation = animations[anim->mName.C_Str()];
+        animation.duration = anim->mDuration;
+        animation.ticksPerSecond = anim->mTicksPerSecond;
+        printf("animation name [%s]\n", anim->mName.C_Str());
+        for (int j = 0 ; j < anim->mNumChannels; ++j) {
+            auto channel = anim->mChannels[j];
+            printf("animation channel node name [%s]\n", channel->mNodeName.C_Str());
+            auto & animationChannel = animation.animationChannels[channel->mNodeName.C_Str()];
+
+            for (int k = 0; k < channel->mNumPositionKeys; ++k) {
+                auto posKey = channel->mPositionKeys[k];
+                auto pos = posKey.mValue;
+
+                AnimationKey<Vec3f> positionKey;
+                positionKey.time = posKey.mTime;
+                positionKey.value = readVec3f(pos);
+                animationChannel.positionKeys.push_back(positionKey);
+            }
+
+            for (int k = 0; k < channel->mNumScalingKeys; ++k) {
+                auto key = channel->mScalingKeys[k];
+                auto scale = key.mValue;
+
+                AnimationKey<Vec3f> scalingKey;
+                scalingKey.time = key.mTime;
+                scalingKey.value = readVec3f(scale);
+                animationChannel.scalingKeys.push_back(scalingKey);
+            }
+            
+            for (int k = 0; k < channel->mNumRotationKeys; ++k) {
+                auto key = channel->mRotationKeys[k];
+                auto rotation = key.mValue;
+
+                AnimationKey<Quat> rotationKey;
+                rotationKey.time = key.mTime;
+                rotationKey.value = readQuat(rotation);
+                animationChannel.rotationKeys.push_back(rotationKey);
+            }
+        }
+    }
+
     return true;
 }
