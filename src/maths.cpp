@@ -2,6 +2,16 @@
 #include <algorithm>
 #include "debug.h"
 
+template <>
+Mat4f Mat4f::identify = 
+{
+    {1, 0,0,0},
+    {0, 1,0,0},
+    {0, 0,1,0},
+    {0, 0,0,1},
+};
+
+
 Mat4f lookat(const Vec3f & pos, const Vec3f & target, const Vec3f & up)
 {
 	auto z = normalize(pos - target);

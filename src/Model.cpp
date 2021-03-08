@@ -188,40 +188,99 @@ bool SkinnedModel::load(const std::string & path)
     return true;
 }
 
-Frame Animation::getFrame(double sec)
+
+void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node)
 {
-    Frame frame;
-    sec = fmod(sec, duration);
-    for (auto & channel : animationChannels) {
-        auto & pose = frame.jointPoses[channel.first];
-        auto & c = channel.second;
+    if (!node) return;
+
+    auto iter = animationChannels.find(node->name);
+    node->transform = Mat4f::identify;
+    if (iter != animationChannels.end()) {
+        auto & c = iter->second;
+        Mat4f translation = Mat4f::identify;
+        Mat4f scaling = Mat4f::identify;
+        Mat4f rotation = Mat4f::identify;
         for (int i = 0; i < c.positionKeys.size()-1; ++i) {
             auto & a = c.positionKeys[i];
             auto & b = c.positionKeys[i+1];
             if (a.time <= sec && sec < b.time) {
                 double t = (sec - a.time) / (b.time - a.time);
-                pose.translate = a.value * (1-t) + b.value * t;
+                auto value = lerp(a.value, b.value, t);
+                translation[3][0] = value.x;
+                translation[3][1] = value.y;
+                translation[3][2] = value.z;
             }
         }
+        for (int i = 0; i < c.scalingKeys.size()-1; ++i) {
+            auto & a = c.scalingKeys[i];
+            auto & b = c.scalingKeys[i+1];
+            if (a.time <= sec && sec < b.time) {
+                double t = (sec - a.time) / (b.time - a.time);
+                auto value = lerp(a.value, b.value, t);
+                scaling[0][0] = value.x;
+                scaling[1][1] = value.y;
+                scaling[2][2] = value.z;
+            }
+        }
+        for (int i = 0; i < c.rotationKeys.size()-1; ++i) {
+            auto & a = c.rotationKeys[i];
+            auto & b = c.rotationKeys[i+1];
+            if (a.time <= sec && sec < b.time) {
+                double t = (sec - a.time) / (b.time - a.time);
+                auto rotator = lerp(a.value, b.value, t);
+                rotation = rotator;
+            }
+        }
+        node->transform = rotation * translation ; 
     }
 
+    if (node->parent) {
+        node->transform = node->transform * node->parent->transform;
+    }
+    for (auto child : node->childs) {
+        getNodeTransform(sec, child);
+    }
+}
+
+Frame Animation::getFrame(double sec, Skeleton & sk)
+{
+    Frame frame;
+    sec = sec * ticksPerSecond;
+    sec = fmod(sec, duration);
+    getNodeTransform(sec, sk.root);
     return frame;
+}
+
+std::shared_ptr<SkeletonNode> AnimationSet::processNode(aiNode * node, const aiScene * scene)
+{
+    auto currentNode = std::make_shared<SkeletonNode>();
+    currentNode->name = node->mName.C_Str();
+    currentNode->transform = readMat4f(node->mTransformation);
+
+    for (int i = 0; i < node->mNumChildren; i++) {
+        auto child = processNode(node->mChildren[i], scene);
+        child->parent = currentNode;
+        printf("%s->%s\n", child->name.c_str(), currentNode->name.c_str());
+        currentNode->childs.push_back(child);
+    }
+    return currentNode;
 }
 
 bool AnimationSet::load(const std::string & path)
 {
     Assimp::Importer Importer;
     const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-    printf("%d animations\n", pScene->mNumAnimations);
+    skeleton.root = processNode(pScene->mRootNode, pScene);
+    //printf("%d animations\n", pScene->mNumAnimations);
     for (int i = 0 ; i < pScene->mNumAnimations; ++i) {
         auto anim = pScene->mAnimations[i];
         auto & animation = animations[anim->mName.C_Str()];
         animation.duration = anim->mDuration;
         animation.ticksPerSecond = anim->mTicksPerSecond;
-        printf("animation name [%s]\n", anim->mName.C_Str());
+        //printf("animation name [%s]\n", anim->mName.C_Str());
         for (int j = 0 ; j < anim->mNumChannels; ++j) {
             auto channel = anim->mChannels[j];
-            printf("animation channel node name [%s]\n", channel->mNodeName.C_Str());
+            //printf("animation channel node name [%s]\n", channel->mNodeName.C_Str());
             auto & animationChannel = animation.animationChannels[channel->mNodeName.C_Str()];
 
             for (int k = 0; k < channel->mNumPositionKeys; ++k) {

@@ -9,14 +9,23 @@
 #include "geometry.h"
 #include "ModelLoader.h"
 
-void travelNode(std::shared_ptr<SkeletonNode> root, int tab = 0)
+void travelNode(std::shared_ptr<SkeletonNode> root, std::vector<Vertex> & vs, const Vertex & parent = Vertex(), int tab = 0)
 {
     for (int i = 0 ; i < tab; ++ i) {
         printf("  ");
     }
-    printf("%s\n", root->name.c_str());
+    Vec4f pos = {0, 0, 0, 1};
+    pos = pos * root->transform;
+    Vertex v = {{pos.x, pos.y, pos.z}, {1, 1, 1}};
+    if (root->parent) {
+        vs.push_back(parent);
+    }else {
+        vs.push_back(v);
+    }
+    vs.push_back(v);
+    printf("%s (%.2f %.2f %.2f)\n", root->name.c_str(), pos.x, pos.y, pos.z);
     for (auto child : root->childs) {
-        travelNode(child, tab+1);
+        travelNode(child, vs,v, tab+1);
     }
 }
 
@@ -113,7 +122,6 @@ int main(int argc, char * argv[])
     float time = anim.duration;
     auto start = std::chrono::system_clock::now();
 
-    //travelNode(robot.skeleton.root);
 	while (!quit) {
 		{
 			PROFILE(frame);
@@ -130,15 +138,16 @@ int main(int argc, char * argv[])
 
                 Mat4f model;
                 animationShader->setCamera(view);
+                Quat quat(Vec3f(0, 1, 0), halfRadians(ang));
+                //animationShader->setModel(quat);
 
                 auto current = std::chrono::system_clock::now() - start;
                 double sec = current.count()/1000000000.0;
-                printf("%lf\n", sec);
-                auto frame = anim.getFrame(sec);
+                //
+                //printf("%lf\n", sec);
                 std::vector<Vertex> vs;
-                for (auto & pose : frame.jointPoses) {
-                    vs.push_back({pose.second.translate, {1,1,1}});
-                }
+                auto frame = anim.getFrame(0, anims.skeleton);
+                travelNode(anims.skeleton.root, vs);
                 pipeline.drawArray(vs.data(), vs.size(), DrawMode::LINE);
 
                 //debug.drawSkeleton(pipeline, robot.skeleton, colorShader); 

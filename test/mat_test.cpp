@@ -77,6 +77,15 @@ int main ()
 		{1.f, 4.f, -1.f, 1.f},
 		{1.f, 3.f, 5.f, 1.f}
 	};
+
+    printf("quaternion\n");
+    Quat q(Vec3f(0,0,1), halfRadians(90));
+    Quat q2(Vec3f(0,0,1), halfRadians(0));
+    auto q3 = lerp(q2, q, 1.f/3);
+
+    Quat p(1, 0, 0, 0);
+    auto pp = cross(q3.inverse(), cross(p,q3));
+    printf("%.2f, %.2f, %.2f %.2f\n", pp.x, pp.y, pp.z, pp.w);
 	//print(t);
 	//auto i = inverse(t, 4);
 

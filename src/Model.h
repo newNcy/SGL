@@ -130,11 +130,14 @@ struct Animation
     double duration;
     double ticksPerSecond;
     std::unordered_map<std::string, AnimationChannel> animationChannels;
-    Frame getFrame(double sec);
+    void getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node);
+    Frame getFrame(double sec, Skeleton & sk);
 };
 
 struct AnimationSet
 {
+    Skeleton skeleton;
+    std::shared_ptr<SkeletonNode> processNode(aiNode * node, const aiScene * scene);
     std::unordered_map<std::string, Animation> animations;
     bool load(const std::string & path);
 };
