@@ -146,7 +146,7 @@ int main(int argc, char * argv[])
                 //
                 //printf("%lf\n", sec);
                 std::vector<Vertex> vs;
-                auto frame = anim.getFrame(0, anims.skeleton);
+                auto frame = anim.getFrame(sec, anims.skeleton);
                 travelNode(anims.skeleton.root, vs);
                 pipeline.drawArray(vs.data(), vs.size(), DrawMode::LINE);
 

@@ -231,7 +231,7 @@ void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node)
                 rotation = rotator;
             }
         }
-        node->transform = rotation * translation ; 
+        node->transform = scaling * rotation *translation ; 
     }
 
     if (node->parent) {
