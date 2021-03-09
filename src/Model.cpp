@@ -1,6 +1,7 @@
 #include "Model.h"
 #define STB_IMAGE_IMPLEMENTATION 
 #include "stb_image.h"
+#include "debug.h"
 
 Texture::Texture(const char * path)
 {
@@ -189,7 +190,7 @@ bool SkinnedModel::load(const std::string & path)
 }
 
 
-void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node)
+void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node, const Mat4f & inverse)
 {
     if (!node) return;
 
@@ -228,7 +229,7 @@ void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node)
             if (a.time <= sec && sec < b.time) {
                 double t = (sec - a.time) / (b.time - a.time);
                 auto rotator = lerp(a.value, b.value, t);
-                rotation = rotator;
+                rotation = rotator/rotator.length();
             }
         }
         node->transform = scaling * rotation *translation ; 
@@ -238,7 +239,7 @@ void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node)
         node->transform = node->transform * node->parent->transform;
     }
     for (auto child : node->childs) {
-        getNodeTransform(sec, child);
+        getNodeTransform(sec, child, inverse);
     }
 }
 
@@ -247,7 +248,7 @@ Frame Animation::getFrame(double sec, Skeleton & sk)
     Frame frame;
     sec = sec * ticksPerSecond;
     sec = fmod(sec, duration);
-    getNodeTransform(sec, sk.root);
+    getNodeTransform(sec, sk.root, sk.globalInverse);
     return frame;
 }
 
@@ -256,7 +257,8 @@ std::shared_ptr<SkeletonNode> AnimationSet::processNode(aiNode * node, const aiS
     auto currentNode = std::make_shared<SkeletonNode>();
     currentNode->name = node->mName.C_Str();
     currentNode->transform = readMat4f(node->mTransformation);
-
+	printf("transform\n");
+	print(currentNode->transform);
     for (int i = 0; i < node->mNumChildren; i++) {
         auto child = processNode(node->mChildren[i], scene);
         child->parent = currentNode;
@@ -270,7 +272,10 @@ bool AnimationSet::load(const std::string & path)
 {
     Assimp::Importer Importer;
     const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-    skeleton.root = processNode(pScene->mRootNode, pScene);
+	if (pScene->mRootNode->mNumChildren) {
+		skeleton.root = processNode(pScene->mRootNode->mChildren[0], pScene);
+		skeleton.globalInverse = readMat4f(pScene->mRootNode->mChildren[0]->mTransformation.Inverse());
+	}
     //printf("%d animations\n", pScene->mNumAnimations);
     for (int i = 0 ; i < pScene->mNumAnimations; ++i) {
         auto anim = pScene->mAnimations[i];

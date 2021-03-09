@@ -78,6 +78,7 @@ struct Skeleton
 {
     std::vector<Bone> bones;
     std::shared_ptr<SkeletonNode> root;
+	Mat4f globalInverse;
     std::unordered_map<std::string, uint32_t> boneIDMap; 
 };
 
@@ -130,7 +131,7 @@ struct Animation
     double duration;
     double ticksPerSecond;
     std::unordered_map<std::string, AnimationChannel> animationChannels;
-    void getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node);
+    void getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node, const Mat4f & inverse);
     Frame getFrame(double sec, Skeleton & sk);
 };
 
