@@ -76,10 +76,8 @@ struct SkeletonNode
 };
 struct Skeleton
 {
-    std::vector<Bone> bones;
     std::shared_ptr<SkeletonNode> root;
 	Mat4f globalInverse;
-    std::unordered_map<std::string, uint32_t> boneIDMap; 
 };
 
 struct SkinnedMesh
@@ -92,10 +90,11 @@ struct SkinnedMesh
 struct SkinnedModel
 {
     std::string path;
-    Skeleton skeleton;
+    std::vector<Bone> bones;
+    std::unordered_map<std::string, uint32_t> boneIDMap; 
 	BoundingBox3d boundingBox;
 	std::vector<SkinnedMesh> meshes;
-    std::shared_ptr<SkeletonNode> processNode(aiNode * node, const aiScene * scene);
+    void processNode(aiNode * node, const aiScene * scene);
     SkinnedMesh loadMesh(aiMesh * mesh, const aiScene * scene);
     bool load(const std::string & path);
 };

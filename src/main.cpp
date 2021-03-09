@@ -11,9 +11,6 @@
 
 void travelNode(std::shared_ptr<SkeletonNode> root, std::vector<Vertex> & vs, const Vertex & parent = Vertex(), int tab = 0)
 {
-    for (int i = 0 ; i < tab; ++ i) {
-        printf("  ");
-    }
     Vec4f pos = {0, 0, 0, 1};
     pos = pos * root->transform;
     Vertex v = {{pos.x, pos.y, pos.z}, {1, 1, 1}};
@@ -23,7 +20,6 @@ void travelNode(std::shared_ptr<SkeletonNode> root, std::vector<Vertex> & vs, co
         vs.push_back(v);
     }
     vs.push_back(v);
-    printf("%s (%.2f %.2f %.2f)\n", root->name.c_str(), pos.x, pos.y, pos.z);
     for (auto child : root->childs) {
         travelNode(child, vs,v, tab+1);
     }
@@ -52,10 +48,10 @@ int main(int argc, char * argv[])
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
 	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
     SkinnedModel robot;
-    robot.load("../resource/model/robot/robot.fbx");
+    robot.load("../resource/model/boblampclean.md5mesh");
     
     AnimationSet anims;
-    anims.load("../resource/model/robot/jump.fbx");
+    anims.load("../resource/model/boblampclean.md5anim");
 
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
@@ -118,7 +114,10 @@ int main(int argc, char * argv[])
     for (auto & anim : anims.animations) {
         printf("%s %.2lf %.2lf\n", anim.first.c_str(), anim.second.duration, anim.second.ticksPerSecond);
     }
-    auto & anim = anims.animations["mixamo.com"];
+    auto & anim = anims.animations[""];
+    for (auto & b : robot.boneIDMap) {
+        printf("%d %s\n", b.second, b.first.c_str());
+    }
     float time = anim.duration;
     auto start = std::chrono::system_clock::now();
 
@@ -136,10 +135,15 @@ int main(int argc, char * argv[])
                 pipeline.useShader(colorShader);
                 pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
 
-                Mat4f model;
+                Mat4f model = {
+                    {1,0,0,0},
+                    {0,0,1,0},
+                    {0,1,0,0},
+                    {0,0,0,1},
+                };
                 animationShader->setCamera(view);
+                animationShader->setModel(model);
                 Quat quat(Vec3f(0, 1, 0), halfRadians(ang));
-                //animationShader->setModel(quat);
 
                 auto current = std::chrono::system_clock::now() - start;
                 double sec = current.count()/1000000000.0;
@@ -148,6 +152,7 @@ int main(int argc, char * argv[])
                 std::vector<Vertex> vs;
                 auto frame = anim.getFrame(sec, anims.skeleton);
                 travelNode(anims.skeleton.root, vs);
+				colorShader->setModel(model);
                 pipeline.drawArray(vs.data(), vs.size(), DrawMode::LINE);
 
                 //debug.drawSkeleton(pipeline, robot.skeleton, colorShader); 

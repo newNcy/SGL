@@ -119,16 +119,16 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
     //load bones
     for (int i = 0 ; i < mesh->mNumBones; ++ i) {
         auto bone = mesh->mBones[i];
-        auto iter = skeleton.boneIDMap.find(bone->mName.data);
+        auto iter = boneIDMap.find(bone->mName.data);
         uint32_t boneID;
-        if (iter == skeleton.boneIDMap.end()) {
+        if (iter == boneIDMap.end()) {
             Bone b;
             b.name = bone->mName.data;
 
             auto inverse = bone->mOffsetMatrix.Inverse();
             b.offset = readMat4f(inverse);
-            boneID = skeleton.boneIDMap[b.name] = skeleton.bones.size();
-            skeleton.bones.push_back(b);
+            boneID = boneIDMap[b.name] = bones.size();
+            bones.push_back(b);
         }else{
             boneID = iter->second;
         }
@@ -160,22 +160,16 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
     return ret;
 }
 
-std::shared_ptr<SkeletonNode>SkinnedModel::processNode(aiNode * node, const aiScene * scene)
+void SkinnedModel::processNode(aiNode * node, const aiScene * scene)
 {
-    auto currentNode = std::make_shared<SkeletonNode>();
-    currentNode->name = node->mName.C_Str();
-    currentNode->transform = readMat4f(node->mTransformation);
     for (int i = 0 ; i < node->mNumMeshes; i++) {
         aiMesh * m = scene->mMeshes[node->mMeshes[i]];
         meshes.push_back(loadMesh(m, scene));
     }
 
     for (int i = 0; i < node->mNumChildren; i++) {
-        auto child = processNode(node->mChildren[i], scene);
-        child->parent = currentNode;
-        currentNode->childs.push_back(child);
+        processNode(node->mChildren[i], scene);
     }
-    return currentNode;
 }
 
 bool SkinnedModel::load(const std::string & path)
@@ -184,8 +178,8 @@ bool SkinnedModel::load(const std::string & path)
     const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 
     this->path = std::string(path).substr(0, path.find_last_of('/'));
-    skeleton.root = processNode(pScene->mRootNode, pScene);
     assert(pScene && "resource not found");
+    processNode(pScene->mRootNode, pScene);
     return true;
 }
 
@@ -257,12 +251,9 @@ std::shared_ptr<SkeletonNode> AnimationSet::processNode(aiNode * node, const aiS
     auto currentNode = std::make_shared<SkeletonNode>();
     currentNode->name = node->mName.C_Str();
     currentNode->transform = readMat4f(node->mTransformation);
-	printf("transform\n");
-	print(currentNode->transform);
     for (int i = 0; i < node->mNumChildren; i++) {
         auto child = processNode(node->mChildren[i], scene);
         child->parent = currentNode;
-        printf("%s->%s\n", child->name.c_str(), currentNode->name.c_str());
         currentNode->childs.push_back(child);
     }
     return currentNode;
@@ -273,16 +264,14 @@ bool AnimationSet::load(const std::string & path)
     Assimp::Importer Importer;
     const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 	if (pScene->mRootNode->mNumChildren) {
-		skeleton.root = processNode(pScene->mRootNode->mChildren[0], pScene);
-		skeleton.globalInverse = readMat4f(pScene->mRootNode->mChildren[0]->mTransformation.Inverse());
+		skeleton.root = processNode(pScene->mRootNode, pScene);
+		skeleton.globalInverse = readMat4f(pScene->mRootNode->mTransformation.Inverse()); 
 	}
-    //printf("%d animations\n", pScene->mNumAnimations);
     for (int i = 0 ; i < pScene->mNumAnimations; ++i) {
         auto anim = pScene->mAnimations[i];
         auto & animation = animations[anim->mName.C_Str()];
         animation.duration = anim->mDuration;
         animation.ticksPerSecond = anim->mTicksPerSecond;
-        //printf("animation name [%s]\n", anim->mName.C_Str());
         for (int j = 0 ; j < anim->mNumChannels; ++j) {
             auto channel = anim->mChannels[j];
             //printf("animation channel node name [%s]\n", channel->mNodeName.C_Str());
