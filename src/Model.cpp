@@ -41,7 +41,7 @@ Mat4f readMat4f(const aiMatrix4x4t<float> & matrix)
     Mat4f ret;
     for (int j = 0; j < 4; ++ j) {
         for (int k = 0; k < 4; ++ k) {
-            ret[j][k] = matrix[j][k];
+            ret[k][j] = matrix[j][k];
         }
     }
     return ret;
@@ -273,7 +273,7 @@ bool AnimationSet::load(const std::string & path)
 
     assert(pScene);
 	if (pScene && pScene->mRootNode && pScene->mRootNode->mNumChildren) {
-		skeleton.root = processNode(pScene->mRootNode, pScene);
+		skeleton.root = processNode(pScene->mRootNode->mChildren[0], pScene);
 		skeleton.globalInverse = readMat4f(pScene->mRootNode->mTransformation.Inverse()); 
 	}
     for (int i = 0 ; i < pScene->mNumAnimations; ++i) {
