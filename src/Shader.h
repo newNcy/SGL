@@ -17,7 +17,7 @@ struct V2f
 class SGLShader
 {	
 	public:
-		virtual void onVertex(const Vertex & vert, V2f & out) 
+		virtual void onVertex(void * in, V2f & out) 
 		{ 
 		}
 		virtual void onFragment(const V2f & v2f, Vec4f & color) 
@@ -55,8 +55,9 @@ class NormalShader : public SGLShader
 			projection = perspective(60, 1.f, .1f, 1000.f);
 		}
 
-		void onVertex(const Vertex & vert, V2f & out) override
+		void onVertex(void * in, V2f & out) override
 		{
+            auto vert = *(Vertex*)in;
 			PROFILE(vertex_shader);
 			out.position = Vec4f(vert.position,1) * model * view * projection;
 			auto worldPos = Vec4f(vert.position, 1) * model;
@@ -117,4 +118,18 @@ class ModelShader : public NormalShader
 
 class AnimationShader : public ModelShader 
 {
+    public:
+        Frame frame;
+        void onVertex(void * in, V2f & out) override
+        {
+            const SkinnedVertex & sv = *reinterpret_cast<SkinnedVertex*>(in);
+            auto & gbones = frame.jointPoses;
+            auto bt = gbones[sv.boneId[0]] * sv.weights[0] + gbones[sv.boneId[1]] * sv.weights[1] + gbones[sv.boneId[2]] * sv.weights[2] + gbones[sv.boneId[3]] * sv.weights[3];
+
+            out.position = Vec4f(sv.position,1) * bt * model * view * projection;
+            auto worldPos = Vec4f(sv.position, 1) * model;
+            auto worldNorm = Vec4f(sv.normal, 1) * normalMatrix;
+            out.worldPosition = Vec3f(worldPos.x, worldPos.y, worldPos.z);
+            out.norm = Vec3f(worldNorm.x, worldNorm.y, worldNorm.z);
+        }
 };

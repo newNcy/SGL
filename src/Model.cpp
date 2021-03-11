@@ -125,8 +125,7 @@ SkinnedMesh SkinnedModel::loadMesh(aiMesh * mesh, const aiScene * scene)
             Bone b;
             b.name = bone->mName.data;
 
-            auto inverse = bone->mOffsetMatrix.Inverse();
-            b.offset = readMat4f(inverse);
+            b.offset = readMat4f(bone->mOffsetMatrix);
             boneID = boneIDMap[b.name] = bones.size();
             bones.push_back(b);
         }else{
@@ -184,7 +183,7 @@ bool SkinnedModel::load(const std::string & path)
 }
 
 
-void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node, const Mat4f & inverse)
+void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node, const Mat4f & inverse, const std::unordered_map<std::string, uint32_t> & boneIDMap, const std::vector<Bone> & bones, Frame & frame)
 {
     if (!node) return;
 
@@ -232,17 +231,25 @@ void Animation::getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node,
     if (node->parent) {
         node->transform = node->transform * node->parent->transform;
     }
+
+    auto biter = boneIDMap.find(node->name);
+    if (biter != boneIDMap.end()) {
+        auto index = biter->second;
+        frame.jointPoses[index] = bones[index].offset * node->transform;
+    }
+
     for (auto child : node->childs) {
-        getNodeTransform(sec, child, inverse);
+        getNodeTransform(sec, child, inverse, boneIDMap, bones, frame);
     }
 }
 
-Frame Animation::getFrame(double sec, Skeleton & sk)
+Frame Animation::getFrame(double sec, Skeleton & sk, const std::unordered_map<std::string, uint32_t> & boneIdMap, const std::vector<Bone> & bones)
 {
     Frame frame;
     sec = sec * ticksPerSecond;
     sec = fmod(sec, duration);
-    getNodeTransform(sec, sk.root, sk.globalInverse);
+    frame.jointPoses.resize(bones.size());
+    getNodeTransform(sec, sk.root, sk.globalInverse, boneIdMap, bones, frame);
     return frame;
 }
 
@@ -263,7 +270,9 @@ bool AnimationSet::load(const std::string & path)
 {
     Assimp::Importer Importer;
     const aiScene* pScene = Importer.ReadFile(path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-	if (pScene->mRootNode->mNumChildren) {
+
+    assert(pScene);
+	if (pScene && pScene->mRootNode && pScene->mRootNode->mNumChildren) {
 		skeleton.root = processNode(pScene->mRootNode, pScene);
 		skeleton.globalInverse = readMat4f(pScene->mRootNode->mTransformation.Inverse()); 
 	}

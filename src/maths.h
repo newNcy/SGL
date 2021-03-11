@@ -94,10 +94,10 @@ struct Mat4
     Mat4(const Quaternion<T> & quat); 
 	Mat4() {data[0][0] = 1; data[1][1] = 1; data[2][2] = 1; data[3][3] = 1;}
 	Mat4(const Vec4 & a, const Vec4 & b, const Vec4 & c, const Vec4 & d):data{a, b, c, d} {}
-	Type operator + (const Type & rhs) const { return Type(*this[0]+rhs[0], *this[1]+rhs[1], *this[2]+rhs[2], *this[3]+rhs[3]); }
-	Type operator - (const Type & rhs) const { return Type(*this[0]-rhs[0], *this[1]-rhs[1], *this[2]-rhs[2], *this[3]-rhs[3]); }
-	Type operator * (float f) const { return Type(*this[0]*f, *this[1]*f, *this[2]*f, *this[3]*f); }
-	Type operator / (float f) const { return Type(*this[0]/f, *this[1]/f, *this[2]/f, *this[3]/f); }
+	Type operator + (const Type & rhs) const { return Type(data[0]+rhs[0], data[1]+rhs[1], data[2]+rhs[2], data[3]+rhs[3]); }
+	Type operator - (const Type & rhs) const { return Type(data[0]-rhs[0], data[1]-rhs[1], data[2]-rhs[2], data[3]-rhs[3]); }
+	Type operator * (float f) const { return Type(data[0]*f, data[1]*f, data[2]*f, data[3]*f); }
+	Type operator / (float f) const { return Type(data[0]/f, data[1]/f, data[2]/f, data[3]/f); }
 
 	Vec4 & operator [] (unsigned int index) { assert(index < 4); return data[index];}
 	const Vec4 & operator [] (unsigned int index) const { assert(index < 4); return data[index];}

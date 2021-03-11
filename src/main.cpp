@@ -32,7 +32,7 @@ int main(int argc, char * argv[])
 
 	SGLContext sgl;
     int width = 800, height = 800;
-	sgl.init("wai bi ba bo", WINPOS_CENTER, WINPOS_CENTER, width, height);
+	sgl.init("wai bi ba bo", 50, 50, width, height);
 	SGLPipeline pipeline;
 	pipeline.makeFrameBuffer(width, height);
 
@@ -48,10 +48,10 @@ int main(int argc, char * argv[])
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
 	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
     SkinnedModel robot;
-    robot.load("../resource/model/boblampclean.md5mesh");
+    robot.load("../resource/model/a.fbx");
     
     AnimationSet anims;
-    anims.load("../resource/model/boblampclean.md5anim");
+    anims.load("../resource/model/a.fbx");
 
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
@@ -114,7 +114,7 @@ int main(int argc, char * argv[])
     for (auto & anim : anims.animations) {
         printf("%s %.2lf %.2lf\n", anim.first.c_str(), anim.second.duration, anim.second.ticksPerSecond);
     }
-    auto & anim = anims.animations[""];
+    auto & anim = anims.animations["mixamo.com"];
     for (auto & b : robot.boneIDMap) {
         printf("%d %s\n", b.second, b.first.c_str());
     }
@@ -135,12 +135,7 @@ int main(int argc, char * argv[])
                 pipeline.useShader(colorShader);
                 pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
 
-                Mat4f model = {
-                    {1,0,0,0},
-                    {0,0,1,0},
-                    {0,1,0,0},
-                    {0,0,0,1},
-                };
+                Mat4f model;
                 animationShader->setCamera(view);
                 animationShader->setModel(model);
                 Quat quat(Vec3f(0, 1, 0), halfRadians(ang));
@@ -150,7 +145,8 @@ int main(int argc, char * argv[])
                 //
                 //printf("%lf\n", sec);
                 std::vector<Vertex> vs;
-                auto frame = anim.getFrame(sec, anims.skeleton);
+                auto frame = anim.getFrame(sec, anims.skeleton, robot.boneIDMap, robot.bones);
+                animationShader->frame = frame;
                 travelNode(anims.skeleton.root, vs);
 				colorShader->setModel(model);
                 pipeline.drawArray(vs.data(), vs.size(), DrawMode::LINE);
@@ -193,7 +189,7 @@ int main(int argc, char * argv[])
 						//fflush(stdout);
 					}else if (event.type == SDL_KEYDOWN) {
 						char key = event.key.keysym.sym;
-						float moveSpeed = 1;
+						float moveSpeed = 0.2;
 						switch (key) {
 							case 'a':
 								campos = campos + normalize(cross(up, lookDir))*moveSpeed;

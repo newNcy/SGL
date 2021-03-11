@@ -63,7 +63,6 @@ struct Model
 struct Bone
 {
     std::string name;
-    uint32_t parent;
     Mat4f offset;
 };
 
@@ -122,7 +121,7 @@ struct Pose
 
 struct Frame 
 {
-    std::unordered_map<std::string, Pose> jointPoses;
+    std::vector<Mat4f> jointPoses;
 };
 
 struct Animation
@@ -130,8 +129,8 @@ struct Animation
     double duration;
     double ticksPerSecond;
     std::unordered_map<std::string, AnimationChannel> animationChannels;
-    void getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node, const Mat4f & inverse);
-    Frame getFrame(double sec, Skeleton & sk);
+    void getNodeTransform(double sec, std::shared_ptr<SkeletonNode> node, const Mat4f & inverse, const std::unordered_map<std::string, uint32_t> & boneIdMap, const std::vector<Bone> & bones, Frame & frame);
+    Frame getFrame(double sec, Skeleton & sk, const std::unordered_map<std::string, uint32_t> & boneIdMap, const std::vector<Bone> & bones);
 };
 
 struct AnimationSet

@@ -498,7 +498,7 @@ void SGLPipeline::drawArray(const Vertex * verties, size_t count, DrawMode drawM
         out.color = v.color;
         out.uv = v.uv;
         out.norm = v.normal;
-        shader->onVertex(v, out);
+        shader->onVertex(&v, out);
 
         if (drawMode == DrawMode::POINT) {
             drawPoint(out);
@@ -528,7 +528,7 @@ void SGLPipeline::drawElements(const void * verties, uint32_t stride, size_t cou
         out.color = vp->color;
         out.uv = vp->uv;
         out.norm = vp->normal;
-        shader->onVertex(*vp, out);
+        shader->onVertex(vp, out);
         points.push_back(out);
     }
 
