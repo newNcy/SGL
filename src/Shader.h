@@ -126,7 +126,7 @@ class AnimationShader : public ModelShader
             auto & gbones = frame.jointPoses;
             auto bt = gbones[sv.boneId[0]] * sv.weights[0] + gbones[sv.boneId[1]] * sv.weights[1] + gbones[sv.boneId[2]] * sv.weights[2] + gbones[sv.boneId[3]] * sv.weights[3];
             auto worldPos = Vec4f(sv.position, 1) * model;
-            auto worldNorm = Vec4f(sv.normal, 1) * normalMatrix;
+            auto worldNorm = Vec4f(sv.normal, 0) * bt * normalMatrix;
 
             out.position = Vec4f(sv.position,1) * bt * model * view * projection;
             out.worldPosition = Vec3f(worldPos.x, worldPos.y, worldPos.z);

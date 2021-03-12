@@ -47,6 +47,7 @@ int main(int argc, char * argv[])
 	auto loader = std::make_shared<OBJLoader>();
 	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
 	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
+
     SkinnedModel robot;
     robot.load("../resource/model/a.fbx");
     
@@ -137,21 +138,32 @@ int main(int argc, char * argv[])
 
                 Mat4f model;
                 animationShader->setCamera(view);
-                animationShader->setModel(model);
                 Quat quat(Vec3f(0, 1, 0), halfRadians(ang));
 
                 auto current = std::chrono::system_clock::now() - start;
                 double sec = current.count()/1000000000.0;
+                
+                
                 //
                 //printf("%lf\n", sec);
-                std::vector<Vertex> vs;
                 auto frame = anim.getFrame(sec, anims.skeleton, robot.boneIDMap, robot.bones);
-                animationShader->frame = frame;
+                std::vector<Vertex> vs;
                 travelNode(anims.skeleton.root, vs);
-				colorShader->setModel(model);
+                colorShader->setModel(moveto(10, 0, 0));
                 pipeline.drawArray(vs.data(), vs.size(), DrawMode::LINE);
 
+                animationShader->frame = frame;
                 //debug.drawSkeleton(pipeline, robot.skeleton, colorShader); 
+                animationShader->setModel(moveto(0, 0, 0));
+                for (auto & mesh : robot.meshes) {
+					animationShader->setMaterial(mesh.material);
+                    pipeline.useShader(animationShader);
+					pipeline.drawElements(mesh.vertices.data(), sizeof(SkinnedVertex), mesh.vertices.size(), mesh.indices.data(), mesh.indices.size(), DrawMode::TRIANGLE);
+                }
+
+                animationShader->setModel(moveto(-10, 0, 0));
+                animationShader->frame.jointPoses.clear();
+                animationShader->frame.jointPoses.resize(robot.bones.size(), Mat4f());
                 for (auto & mesh : robot.meshes) {
 					animationShader->setMaterial(mesh.material);
                     pipeline.useShader(animationShader);
