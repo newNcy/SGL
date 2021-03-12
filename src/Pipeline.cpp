@@ -280,14 +280,14 @@ std::vector<V2f> SutherlandHodgeman(std::vector<V2f> & out, int count)
             switch(code) {
                 case 0: //都不在
                     break;
-                case 1: //i不在 j在
+                case 1: //j不在 i在
                     {
                         V2f clip = lerp(in[pre], in[i], pred/(pred-di));
                         out.push_back(clip);
                         out.push_back(in[i]);
                     }
                     break;
-                case 2: //i在j不在
+                case 2: //j在 i不在
                     {
                         V2f clip = lerp(in[pre], in[i], pred/(pred-di));
                         out.push_back(clip);

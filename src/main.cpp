@@ -31,8 +31,8 @@ int main(int argc, char * argv[])
 	initSGL();
 
 	SGLContext sgl;
-    int width = 800, height = 800;
-	sgl.init("wai bi ba bo", 50, 50, width, height);
+    int width = 500, height = 500;
+	sgl.init("wai bi ba bo", WINPOS_CENTER, WINPOS_CENTER, width, height);
 	SGLPipeline pipeline;
 	pipeline.makeFrameBuffer(width, height);
 
@@ -45,14 +45,12 @@ int main(int argc, char * argv[])
 	auto ground = genGround(30, 30);
 	
 	auto loader = std::make_shared<OBJLoader>();
-	auto nanosuit = loader->load("../resource/model/nanosuit/nanosuit.obj");
-	auto vikingroom = loader->load("../resource/model/vikingroom/vikingroom.obj");
 
     SkinnedModel robot;
-    robot.load("../resource/model/a.fbx");
+    robot.load("../resource/model/Flair.fbx");
     
     AnimationSet anims;
-    anims.load("../resource/model/a.fbx");
+    anims.load("../resource/model/Flair.fbx");
 
 	//auto nanosuit = loader->load("../resource/model/file.obj");
 
@@ -134,7 +132,7 @@ int main(int argc, char * argv[])
 				colorShader->setCamera(view);
 				colorShader->setModel(Mat4f());
                 pipeline.useShader(colorShader);
-                pipeline.drawArray(&axis[0], 6, DrawMode::LINE);
+                pipeline.drawArray(axis.data(), axis.size(), DrawMode::LINE);
 
                 Mat4f model;
                 animationShader->setCamera(view);
@@ -146,7 +144,7 @@ int main(int argc, char * argv[])
                 
                 //
                 //printf("%lf\n", sec);
-                auto frame = anim.getFrame(sec, anims.skeleton, robot.boneIDMap, robot.bones);
+                auto frame = anim.getFrame(sec/10, anims.skeleton, robot.boneIDMap, robot.bones);
                 std::vector<Vertex> vs;
                 travelNode(anims.skeleton.root, vs);
                 colorShader->setModel(moveto(10, 0, 0));
@@ -249,15 +247,6 @@ int main(int argc, char * argv[])
         char title[128] = {0};
         sprintf(title, "fps %3.1f", lastfps);
         SDL_SetWindowTitle(sgl.winPtr(), title);
-		//printf("%3.1f fps\n", lastfps);
-		for (auto & mesh : nanosuit->meshs) {
-			//printf("%s ", mesh->name.c_str());
-			if (mesh->material) {
-				//printf("usemtl %s ", mesh->material->name.c_str());
-			}
-			//printf("\n");
-		}
-		//printf("yaw %.2f pitch %.2f, look dir (%.2f %.2f %.2f)\n", yaw, pitch, lookDir.x, lookDir.y, lookDir.z);
 		fflush(stdout);
 	}
 
